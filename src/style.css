@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply font-poppins bg-neutral-100 text-neutral-800 antialiased text-sm;
+}
