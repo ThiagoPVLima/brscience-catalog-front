@@ -1,5 +1,9 @@
+// ══════════════════════════════════════════════════════════════════
+//  useBanners.ts
+// ══════════════════════════════════════════════════════════════════
 import { ref } from 'vue'
-import { supabase, uploadImage } from '../lib/supabase'
+
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export interface Banner {
   id: string
@@ -19,97 +23,82 @@ export function useBanners() {
 
   const fetchBanners = async () => {
     loading.value = true
-    const { data, error } = await supabase
-      .from('banners')
-      .select('*')
-      .order('order')
-
-    if (error) {
-      console.error('Erro ao buscar banners:', error.message)
-    } else {
+    try {
+      const res = await fetch(`${API}/banners`)
+      const data = await res.json()
       banners.value = (data || []).map(rowToBanner)
       updateActiveBanners()
+    } catch (err) {
+      console.error('Erro ao buscar banners:', err)
+    } finally {
+      loading.value = false
     }
-    loading.value = false
   }
 
   const addBanner = async (banner: Omit<Banner, 'id'>) => {
-    // Upload imagem web se for base64
-    let imageUrl = banner.imageUrl
-    if (imageUrl && imageUrl.startsWith('data:')) {
-      imageUrl = await uploadImage(imageUrl, 'banners')
+    const form = new FormData()
+    form.append('title', banner.title)
+    form.append('order', String(banner.order))
+    form.append('active', String(banner.active))
+    if (banner.link) form.append('link', banner.link)
+
+    if (banner.imageUrl instanceof File) {
+      form.append('image', banner.imageUrl)
+    } else {
+      form.append('image_url', banner.imageUrl)
     }
 
-    // Upload imagem mobile se existir e for base64
-    let mobileImageUrl = banner.mobileImageUrl
-    if (mobileImageUrl && mobileImageUrl.startsWith('data:')) {
-      mobileImageUrl = await uploadImage(mobileImageUrl, 'banners')
+    if (banner.mobileImageUrl) {
+      if (banner.mobileImageUrl instanceof File) {
+        form.append('mobileImage', banner.mobileImageUrl)
+      } else {
+        form.append('mobile_image_url', banner.mobileImageUrl)
+      }
     }
 
-    const { data, error } = await supabase
-      .from('banners')
-      .insert({
-        image_url: imageUrl,
-        mobile_image_url: mobileImageUrl || null,
-        title: banner.title,
-        link: banner.link || null,
-        order: banner.order,
-        active: banner.active
-      })
-      .select()
-      .single()
+    const res = await fetch(`${API}/banners`, { method: 'POST', body: form })
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error) }
 
-    if (error) throw new Error(error.message)
-
+    const data = await res.json()
     banners.value.push(rowToBanner(data))
     updateActiveBanners()
   }
 
   const updateBanner = async (id: string, updatedBanner: Partial<Banner>) => {
-    let imageUrl = updatedBanner.imageUrl
-    if (imageUrl && imageUrl.startsWith('data:')) {
-      imageUrl = await uploadImage(imageUrl, 'banners')
+    const form = new FormData()
+    if (updatedBanner.title !== undefined) form.append('title', updatedBanner.title)
+    if (updatedBanner.order !== undefined) form.append('order', String(updatedBanner.order))
+    if (updatedBanner.active !== undefined) form.append('active', String(updatedBanner.active))
+    if (updatedBanner.link !== undefined) form.append('link', updatedBanner.link || '')
+
+    if (updatedBanner.imageUrl) {
+      if (updatedBanner.imageUrl instanceof File) {
+        form.append('image', updatedBanner.imageUrl)
+      } else {
+        form.append('image_url', updatedBanner.imageUrl)
+      }
+    }
+    if (updatedBanner.mobileImageUrl) {
+      if (updatedBanner.mobileImageUrl instanceof File) {
+        form.append('mobileImage', updatedBanner.mobileImageUrl)
+      } else {
+        form.append('mobile_image_url', updatedBanner.mobileImageUrl)
+      }
     }
 
-    let mobileImageUrl = updatedBanner.mobileImageUrl
-    if (mobileImageUrl && mobileImageUrl.startsWith('data:')) {
-      mobileImageUrl = await uploadImage(mobileImageUrl, 'banners')
-    }
-
-    const { error } = await supabase
-      .from('banners')
-      .update({
-        image_url: imageUrl,
-        mobile_image_url: mobileImageUrl || null,
-        title: updatedBanner.title,
-        link: updatedBanner.link || null,
-        order: updatedBanner.order,
-        active: updatedBanner.active
-      })
-      .eq('id', id)
-
-    if (error) throw new Error(error.message)
+    const res = await fetch(`${API}/banners/${id}`, { method: 'PUT', body: form })
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error) }
 
     const index = banners.value.findIndex(b => b.id === id)
     if (index !== -1) {
-      banners.value[index] = {
-        ...banners.value[index],
-        ...updatedBanner,
-        imageUrl: imageUrl || banners.value[index].imageUrl,
-        mobileImageUrl: mobileImageUrl || banners.value[index].mobileImageUrl
-      }
+      banners.value[index] = { ...banners.value[index], ...updatedBanner }
       updateActiveBanners()
     }
   }
 
   const deleteBanner = async (id: string) => {
-    const { error } = await supabase
-      .from('banners')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw new Error(error.message)
-
+    const res = await fetch(`${API}/banners/${id}`, { method: 'DELETE' })
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error) }
     banners.value = banners.value.filter(b => b.id !== id)
     updateActiveBanners()
   }
@@ -120,25 +109,17 @@ export function useBanners() {
       .sort((a, b) => a.order - b.order)
   }
 
-  return {
-    banners,
-    activeBanners,
-    loading,
-    fetchBanners,
-    addBanner,
-    updateBanner,
-    deleteBanner
-  }
+  return { banners, activeBanners, loading, fetchBanners, addBanner, updateBanner, deleteBanner }
 }
 
 function rowToBanner(row: any): Banner {
   return {
-    id: row.id,
+    id: String(row.id),
     imageUrl: row.image_url || '',
     mobileImageUrl: row.mobile_image_url || undefined,
     title: row.title,
     link: row.link || undefined,
     order: row.order,
-    active: row.active
+    active: Boolean(row.active)
   }
 }

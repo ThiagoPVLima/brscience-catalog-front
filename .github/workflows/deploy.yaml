@@ -1,0 +1,146 @@
+name: build-docker-release-and-redeploy
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  BUILDKIT_PROGRESS: plain
+  AUTO_TAG_MAJOR: '1'
+  AUTO_TAG_MINOR: '0'
+
+jobs:
+  build_push_release:
+    # Evita rodar DUPLO quando a tag foi criada pelo próprio github-actions[bot]
+    if: ${{ !(startsWith(github.ref, 'refs/tags/') && github.actor == 'github-actions[bot]') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Compute image name (lowercase)
+        id: img
+        shell: bash
+        run: |
+          REPO_LC="$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')"
+          echo "repo_lc=$REPO_LC" >> $GITHUB_OUTPUT
+          echo "image=${{ env.REGISTRY }}/${REPO_LC}" >> $GITHUB_OUTPUT
+
+      # ✅ Se for push na main (e NÃO for tag), cria a tag vX.Y.Z e faz push dela
+      - name: Create tag on main (auto)
+        id: autotag
+        if: ${{ github.ref_type != 'tag' && github.ref_name == 'main' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch --tags --force
+
+          MAJOR="${{ env.AUTO_TAG_MAJOR }}"
+          MINOR="${{ env.AUTO_TAG_MINOR }}"
+          PATCH="${GITHUB_RUN_NUMBER}"
+          TAG="v${MAJOR}.${MINOR}.${PATCH}"
+
+          # evita colisão se por algum motivo já existir
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG já existe. Abortando para não sobrescrever."
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "refs/tags/$TAG"
+
+          echo "created_tag=$TAG" >> $GITHUB_OUTPUT
+
+      # ✅ Define outputs de tag SEMPRE (tag do push OU auto-tag)
+      - name: Compute tag
+        id: tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Caso tenha criado tag agora, usa ela como release_tag
+          if [[ -n "${{ steps.autotag.outputs.created_tag || '' }}" ]]; then
+            REF="${{ steps.autotag.outputs.created_tag }}"
+            VERSION="${REF#v}"
+            echo "docker_tag=$VERSION" >> $GITHUB_OUTPUT
+            echo "release_tag=$REF" >> $GITHUB_OUTPUT
+            echo "is_release=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Caso o workflow tenha sido disparado por tag existente
+          REF="${GITHUB_REF_NAME}"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "$REF" == v* ]]; then
+            VERSION="${REF#v}"
+            echo "docker_tag=$VERSION" >> $GITHUB_OUTPUT
+            echo "release_tag=$REF" >> $GITHUB_OUTPUT
+            echo "is_release=true" >> $GITHUB_OUTPUT
+          else
+            # Ex.: feature/x vira feature-x
+            SLUG="${REF//\//-}"
+            SLUG_LC="$(echo "$SLUG" | tr '[:upper:]' '[:lower:]')"
+            echo "docker_tag=$SLUG_LC" >> $GITHUB_OUTPUT
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ✅ Build e push da imagem (Vue3/Vite -> dist -> Nginx)
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          build-args: |
+            VITE_API_URL=${{ vars.VITE_API_URL }}
+            VITE_APP_NAME=BrScience
+          tags: |
+            ${{ steps.img.outputs.image }}:${{ steps.tag.outputs.docker_tag }}
+            ${{ steps.img.outputs.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Create GitHub Release
+        if: ${{ steps.tag.outputs.is_release == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.release_tag }}
+          name: Release ${{ steps.tag.outputs.release_tag }}
+          generate_release_notes: true
+
+      - name: Redeploy on Portainer (Stack Webhook)
+        shell: bash
+        run: |
+          set -e
+          echo "🚀 Disparando redeploy no Portainer..."
+          curl -fsS -X POST "${{ secrets.PORTAINER_WEBHOOK_URL }}?tag=${{ steps.tag.outputs.docker_tag }}"
+          echo "✅ Webhook disparado com tag=${{ steps.tag.outputs.docker_tag }}"

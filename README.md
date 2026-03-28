@@ -91,7 +91,6 @@ git push -u origin main
 ## Arquivos alterados/criados
 
 ```
-src/lib/supabase.ts          ← cliente Supabase + upload de imagens
 src/stores/useProducts.ts    ← lê/salva no banco
 src/stores/useProductLines.ts
 src/stores/useBanners.ts

@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { supabase } from '../../lib/supabase';
+
 import BaseInput from '../atoms/BaseInput.vue';
 
 const router = useRouter();
