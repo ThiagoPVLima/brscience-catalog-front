@@ -26,5 +26,14 @@ const router = createRouter({
   routes
 });
 
+router.beforeEach((to, from, next) => {
+  const user = localStorage.getItem('user');
+
+  if (to.path.startsWith('/admin') && !user) {
+    return next('/login');
+  }
+
+  next();
+});
 
 export default router;

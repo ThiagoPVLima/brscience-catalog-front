@@ -82,8 +82,7 @@ const handleLogin = async () => {
     }
 
     // LOGIN OK
-    localStorage.setItem('isAdmin', 'true');
-    router.push('/admin/dashboard');
+    localStorage.setItem('user', JSON.stringify(data.user)); router.push('/admin/dashboard');
 
   } catch (error) {
     errorMessage.value = 'Erro ao conectar com o servidor';
