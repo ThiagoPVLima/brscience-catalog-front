@@ -7,8 +7,8 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export interface Banner {
   id: string
-  imageUrl: string
-  mobileImageUrl?: string
+  imageUrl: string | File
+  mobileImageUrl?: string | File
   title: string
   link?: string
   order: number

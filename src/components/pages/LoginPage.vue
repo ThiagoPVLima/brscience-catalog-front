@@ -53,6 +53,8 @@ const password = ref('');
 const isLoading = ref(false);
 const errorMessage = ref('');
 
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
 const handleLogin = async () => {
   if (!email.value || !password.value) {
     errorMessage.value = 'Preencha todos os campos';
@@ -63,20 +65,26 @@ const handleLogin = async () => {
   errorMessage.value = '';
 
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.value,
-      password: password.value,
+    const res = await fetch(`${API}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value
+      })
     });
 
-    if (error) {
-      errorMessage.value = 'Acesso Negado: ' + error.message;
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorMessage.value = data.error || 'Acesso negado';
       return;
     }
 
-    if (data.user) {
-      localStorage.setItem('isAdmin', 'true');
-      router.push('/admin/dashboard');
-    }
+    // LOGIN OK
+    localStorage.setItem('isAdmin', 'true');
+    router.push('/admin/dashboard');
+
   } catch (error) {
     errorMessage.value = 'Erro ao conectar com o servidor';
   } finally {
