@@ -40,8 +40,7 @@
               activeTab === tab ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-400 hover:text-slate-600'
             ]">
             {{ tab === 'products' ? 'Produtos' : tab === 'lines' ? 'Linhas' : tab === 'banners' ? 'Banners' :
-              'Vendedores'
-            }}
+              'Vendedores' }}
           </button>
         </div>
 
@@ -74,10 +73,8 @@
                   </div>
                 </td>
                 <td class="p-4">
-                  <span class="px-2 py-1 text-[9px] font-black uppercase rounded-md" :style="{
-                    backgroundColor: getLineColor(product.line) + '20',
-                    color: getLineColor(product.line)
-                  }">
+                  <span class="px-2 py-1 text-[9px] font-black uppercase rounded-md"
+                    :style="{ backgroundColor: getLineColor(product.line) + '20', color: getLineColor(product.line) }">
                     {{ product.line }}
                   </span>
                 </td>
@@ -85,8 +82,10 @@
                 <td class="p-4 text-sm font-bold text-slate-700 dark:text-gray-200">R$ {{ product.price }}</td>
                 <td class="p-4 text-center">
                   <div class="flex justify-center gap-2">
-                    <button @click="openProductModal(product)" class="p-2 text-blue-500">✏️</button>
-                    <button @click="handleDeleteProduct(product.code)" class="p-2 text-red-500">🗑️</button>
+                    <button @click="openProductModal(product)"
+                      class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors">✏️</button>
+                    <button @click="handleDeleteProduct(product.code)"
+                      class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">🗑️</button>
                   </div>
                 </td>
               </tr>
@@ -102,21 +101,38 @@
             <thead>
               <tr class="bg-slate-50 dark:bg-[#1d222b] border-b border-slate-200 dark:border-[#242a36]">
                 <th class="p-4 text-[10px] font-black uppercase text-slate-400">Linha</th>
+                <th class="p-4 text-[10px] font-black uppercase text-slate-400">Cor</th>
                 <th class="p-4 text-[10px] font-black uppercase text-slate-400">Imagem</th>
                 <th class="p-4 text-[10px] font-black uppercase text-slate-400 text-center">Ações</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-[#242a36]">
-              <tr v-for="line in productLines" :key="line.name" class="hover:bg-slate-50/50 dark:hover:bg-[#1d222b]/30">
+              <tr v-for="line in productLines" :key="line.name"
+                class="hover:bg-slate-50/50 dark:hover:bg-[#1d222b]/30 transition-colors">
                 <td class="p-4 text-sm font-bold text-slate-700 dark:text-gray-200">{{ line.name }}</td>
                 <td class="p-4">
-                  <img v-if="line.imageUrl" :src="line.imageUrl as string"
-                    class="w-10 h-10 rounded-full object-cover" />
+                  <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-md border border-slate-200 dark:border-[#242a36]"
+                      :style="{ backgroundColor: line.color }"></div>
+                    <span class="text-xs font-mono text-slate-500">{{ line.color }}</span>
+                  </div>
+                </td>
+                <td class="p-4">
+                  <div class="w-12 h-12 rounded-full overflow-hidden border-2 bg-slate-100 dark:bg-[#0f1115]"
+                    :style="{ borderColor: line.color }">
+                    <img v-if="line.imageUrl" :src="line.imageUrl as string" class="w-full h-full object-cover" />
+                    <div v-else class="w-full h-full flex items-center justify-center text-[9px] font-black uppercase"
+                      :style="{ backgroundColor: line.color + '30', color: line.color }">
+                      {{ line.name.substring(0, 2) }}
+                    </div>
+                  </div>
                 </td>
                 <td class="p-4 text-center">
                   <div class="flex justify-center gap-2">
-                    <button @click="openLineModal(line)" class="p-2 text-blue-500">✏️</button>
-                    <button @click="handleDeleteLine(line.name)" class="p-2 text-red-500">🗑️</button>
+                    <button @click="openLineModal(line)"
+                      class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors">✏️</button>
+                    <button @click="handleDeleteLine(line.name)"
+                      class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">🗑️</button>
                   </div>
                 </td>
               </tr>
@@ -133,23 +149,34 @@
               <tr class="bg-slate-50 dark:bg-[#1d222b] border-b border-slate-200 dark:border-[#242a36]">
                 <th class="p-4 text-[10px] font-black uppercase text-slate-400">Preview</th>
                 <th class="p-4 text-[10px] font-black uppercase text-slate-400">Título</th>
+                <th class="p-4 text-[10px] font-black uppercase text-slate-400">Status</th>
                 <th class="p-4 text-[10px] font-black uppercase text-slate-400 text-center">Ações</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-[#242a36]">
-              <tr v-for="banner in sortedBanners" :key="banner.id" class="hover:bg-slate-50/50">
-                <td class="p-4">
+              <tr v-for="banner in sortedBanners" :key="banner.id"
+                class="hover:bg-slate-50/50 dark:hover:bg-[#1d222b]/30 transition-colors">
+                <td class="p-4 text-center">
                   <div class="flex items-center gap-2">
-                    <img :src="banner.imageUrl as string" class="w-20 h-12 rounded-lg object-cover bg-slate-100" />
+                    <img :src="banner.imageUrl as string"
+                      class="w-20 h-12 rounded-lg object-cover bg-slate-100 dark:bg-[#0f1115]" />
                     <img v-if="banner.mobileImageUrl" :src="banner.mobileImageUrl as string"
-                      class="w-8 h-12 rounded-lg object-cover bg-slate-100" />
+                      class="w-8 h-12 rounded-lg object-cover bg-slate-100 dark:bg-[#0f1115]" />
                   </div>
                 </td>
                 <td class="p-4 text-sm font-bold text-slate-700 dark:text-gray-200">{{ banner.title }}</td>
+                <td class="p-4">
+                  <span
+                    :class="['px-2 py-1 text-[9px] font-black uppercase rounded-md', banner.active ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500']">
+                    {{ banner.active ? 'Ativo' : 'Inativo' }}
+                  </span>
+                </td>
                 <td class="p-4 text-center">
                   <div class="flex justify-center gap-2">
-                    <button @click="openBannerModal(banner)" class="p-2 text-blue-500">✏️</button>
-                    <button @click="handleDeleteBanner(banner.id)" class="p-2 text-red-500">🗑️</button>
+                    <button @click="openBannerModal(banner)"
+                      class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg">✏️</button>
+                    <button @click="handleDeleteBanner(banner.id)"
+                      class="p-2 text-red-500 hover:bg-red-50 rounded-lg">🗑️</button>
                   </div>
                 </td>
               </tr>
@@ -170,16 +197,26 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-[#242a36]">
-              <tr v-for="vendedor in vendedorList" :key="vendedor.id" class="hover:bg-slate-50/50">
-                <td class="p-4 flex items-center gap-3">
-                  <img v-if="vendedor.avatar_url" :src="vendedor.avatar_url as string" class="w-10 h-10 rounded-xl" />
-                  <span class="text-sm font-bold">{{ vendedor.nome }}</span>
+              <tr v-for="vendedor in vendedorList" :key="vendedor.id"
+                class="hover:bg-slate-50/50 dark:hover:bg-[#1d222b]/30">
+                <td class="p-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl overflow-hidden bg-emerald-100 flex items-center justify-center">
+                      <img v-if="vendedor.avatar_url" :src="vendedor.avatar_url as string"
+                        class="w-full h-full object-cover" />
+                      <span v-else class="text-sm font-black text-emerald-600">{{ vendedor.nome.slice(0,
+                        2).toUpperCase() }}</span>
+                    </div>
+                    <span class="text-sm font-bold text-slate-700 dark:text-gray-200">{{ vendedor.nome }}</span>
+                  </div>
                 </td>
-                <td class="p-4 text-xs font-mono">+{{ vendedor.whatsapp }}</td>
+                <td class="p-4 text-xs font-mono text-slate-500">+{{ vendedor.whatsapp }}</td>
                 <td class="p-4 text-center">
                   <div class="flex justify-center gap-2">
-                    <button @click="openVendedorModal(vendedor)" class="p-2 text-blue-500">✏️</button>
-                    <button @click="handleDeleteVendedor(vendedor.id)" class="p-2 text-red-500">🗑️</button>
+                    <button @click="openVendedorModal(vendedor)"
+                      class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg">✏️</button>
+                    <button @click="handleDeleteVendedor(vendedor.id)"
+                      class="p-2 text-red-500 hover:bg-red-50 rounded-lg">🗑️</button>
                   </div>
                 </td>
               </tr>
@@ -222,18 +259,13 @@ import VendedorModal from '../organism/VendedorModal.vue'
 
 // Stores
 const { productList, addProduct, updateProduct, deleteProduct } = useProducts()
-const productLinesStore = useProductLines() // Pegando o objeto completo para evitar erro de propriedade inexistente
+const linesStore = useProductLines()
 const { banners, addBanner, updateBanner, deleteBanner } = useBanners()
 const { vendedorList, addVendedor, updateVendedor, deleteVendedor } = useVendedores()
 
-// Atalhos para as refs da store de linhas
-const productLines = computed(() => productLinesStore.productLines.value)
-
-// Utilities
 const { success, error } = useToast()
 const { confirm } = useConfirm()
 
-// Estado
 const searchQuery = ref('')
 const activeTab = ref<'products' | 'lines' | 'banners' | 'vendedores'>('products')
 
@@ -247,150 +279,57 @@ const selectedLine = ref<ProductLine | null>(null)
 const selectedBanner = ref<Banner | null>(null)
 const selectedVendedor = ref<Vendedor | null>(null)
 
-// Produtos filtrados
+// Computed
+const productLines = computed(() => linesStore.productLines.value)
 const filteredProducts = computed(() => {
   const query = searchQuery.value.toLowerCase().trim()
-  if (!query) return productList.value
-  return productList.value.filter((p: Product) =>
-    p.name.toLowerCase().includes(query) || p.code.toLowerCase().includes(query)
-  )
+  return query ? productList.value.filter(p => p.name.toLowerCase().includes(query) || p.code.toLowerCase().includes(query)) : productList.value
 })
+const sortedBanners = computed(() => [...banners.value].sort((a, b) => a.order - b.order))
 
-const sortedBanners = computed(() => {
-  return [...banners.value].sort((a, b) => a.order - b.order)
-})
+const getLineColor = (lineName: string) => linesStore.productLines.value.find(l => l.name === lineName)?.color || '#3b82f6'
 
-const getLineColor = (lineName: string) => {
-  const line = productLines.value.find(l => l.name === lineName)
-  return line?.color || '#3b82f6'
-}
-
-// ===== HANDLERS =====
-
-// PRODUTOS
-const openProductModal = (product?: Product) => {
-  selectedProduct.value = product ? { ...product } : null
-  isProductModalOpen.value = true
-}
-
-const handleSaveProduct = async (formData: Product) => {
+// Handlers
+const openProductModal = (p?: Product) => { selectedProduct.value = p ? { ...p } : null; isProductModalOpen.value = true }
+const handleSaveProduct = async (f: Product) => {
   try {
     if (selectedProduct.value) {
-      const confirmed = await confirm({ title: 'Confirmar', message: `Atualizar ${formData.name}?`, type: 'info' })
-      if (confirmed) {
-        await updateProduct(formData, selectedProduct.value.code)
-        success('Produto atualizado!')
-        isProductModalOpen.value = false
+      if (await confirm({ title: 'Confirmar', message: `Atualizar ${f.name}?` })) {
+        await updateProduct(f, selectedProduct.value.code); success('Atualizado!'); isProductModalOpen.value = false
       }
-    } else {
-      await addProduct(formData)
-      success('Produto cadastrado!')
-      isProductModalOpen.value = false
-    }
-  } catch (err) { error('Erro ao salvar produto.') }
+    } else { await addProduct(f); success('Salvo!'); isProductModalOpen.value = false }
+  } catch { error('Erro ao salvar.') }
 }
+const handleDeleteProduct = async (c: string) => { if (await confirm({ title: 'Excluir', message: 'Deseja excluir?', type: 'danger' })) await deleteProduct(c) }
 
-const handleDeleteProduct = async (code: string) => {
-  if (await confirm({ title: 'Excluir', message: 'Tem certeza?', type: 'danger' })) {
-    await deleteProduct(code)
-    success('Excluído!')
-  }
-}
-
-// LINHAS (Corrigido Erro 2339)
-const openLineModal = (line?: ProductLine) => {
-  selectedLine.value = line ? { ...line } : null
-  isLineModalOpen.value = true
-}
-
-const handleSaveLine = async (formData: ProductLine & { imageFile?: File }) => {
+const openLineModal = (l?: ProductLine) => { selectedLine.value = l ? { ...l } : null; isLineModalOpen.value = true }
+const handleSaveLine = async (f: ProductLine & { imageFile?: File }) => {
   try {
-    let imageUrl = formData.imageUrl
-
-    // Verifica se a função de upload existe na store
-    if (formData.imageFile && 'uploadLineImage' in productLinesStore) {
-      imageUrl = await (productLinesStore as any).uploadLineImage(formData.imageFile, formData.name)
-    }
-
-    const lineData: ProductLine = {
-      name: formData.name,
-      color: formData.color,
-      imageUrl
-    }
-
-    if (selectedLine.value) {
-      if (await confirm({ title: 'Confirmar', message: `Atualizar linha ${formData.name}?` })) {
-        await productLinesStore.updateLine(selectedLine.value.name, lineData)
-        success('Linha atualizada!')
-        isLineModalOpen.value = false
-      }
-    } else {
-      await productLinesStore.addLine(lineData)
-      success('Linha criada!')
-      isLineModalOpen.value = false
-    }
-  } catch (err: any) { error(err.message || 'Erro ao salvar linha.') }
+    let url = f.imageUrl
+    if (f.imageFile && 'uploadLineImage' in linesStore) url = await (linesStore as any).uploadLineImage(f.imageFile, f.name)
+    const data = { ...f, imageUrl: url }
+    if (selectedLine.value) await linesStore.updateLine(selectedLine.value.name, data)
+    else await linesStore.addLine(data)
+    success('Linha salva!'); isLineModalOpen.value = false
+  } catch { error('Erro na linha.') }
 }
+const handleDeleteLine = async (n: string) => { if (await confirm({ title: 'Excluir', message: 'Deseja excluir?', type: 'danger' })) await linesStore.deleteLine(n) }
 
-const handleDeleteLine = async (name: string) => {
-  if (productList.value.some((p: Product) => p.line === name)) {
-    return error('Existem produtos nesta linha.')
-  }
-  if (await confirm({ title: 'Excluir', message: 'Tem certeza?', type: 'danger' })) {
-    await productLinesStore.deleteLine(name)
-    success('Excluída!')
-  }
-}
-
-// BANNERS
-const openBannerModal = (banner?: Banner) => {
-  selectedBanner.value = banner ? { ...banner } : null
-  isBannerModalOpen.value = true
-}
-
-const handleSaveBanner = async (formData: Omit<Banner, 'id'>) => {
+const openBannerModal = (b?: Banner) => { selectedBanner.value = b ? { ...b } : null; isBannerModalOpen.value = true }
+const handleSaveBanner = async (f: any) => {
   try {
-    if (selectedBanner.value) {
-      await updateBanner(selectedBanner.value.id, formData)
-      success('Banner atualizado!')
-    } else {
-      await addBanner(formData)
-      success('Banner criado!')
-    }
-    isBannerModalOpen.value = false
-  } catch (err) { error('Erro ao salvar banner.') }
+    selectedBanner.value ? await updateBanner(selectedBanner.value.id, f) : await addBanner(f)
+    success('Banner salvo!'); isBannerModalOpen.value = false
+  } catch { error('Erro banner.') }
 }
+const handleDeleteBanner = async (id: string) => { if (await confirm({ title: 'Excluir', message: 'Excluir banner?', type: 'danger' })) await deleteBanner(id) }
 
-const handleDeleteBanner = async (id: string) => {
-  if (await confirm({ title: 'Excluir', message: 'Deseja excluir o banner?', type: 'danger' })) {
-    await deleteBanner(id)
-    success('Banner excluído!')
-  }
-}
-
-// VENDEDORES
-const openVendedorModal = (vendedor?: Vendedor) => {
-  selectedVendedor.value = vendedor ? { ...vendedor } : null
-  isVendedorModalOpen.value = true
-}
-
-const handleSaveVendedor = async (formData: Omit<Vendedor, 'id'>, avatarFile?: File | null) => {
+const openVendedorModal = (v?: Vendedor) => { selectedVendedor.value = v ? { ...v } : null; isVendedorModalOpen.value = true }
+const handleSaveVendedor = async (f: any, file?: File | null) => {
   try {
-    if (selectedVendedor.value) {
-      await updateVendedor(selectedVendedor.value.id, formData, avatarFile || undefined)
-      success('Vendedor atualizado!')
-    } else {
-      await addVendedor(formData, avatarFile || undefined)
-      success('Vendedor criado!')
-    }
-    isVendedorModalOpen.value = false
-  } catch (err) { error('Erro ao salvar vendedor.') }
+    selectedVendedor.value ? await updateVendedor(selectedVendedor.value.id, f, file || undefined) : await addVendedor(f, file || undefined)
+    success('Vendedor salvo!'); isVendedorModalOpen.value = false
+  } catch { error('Erro vendedor.') }
 }
-
-const handleDeleteVendedor = async (id: string) => {
-  if (await confirm({ title: 'Excluir', message: 'Deseja excluir o vendedor?', type: 'danger' })) {
-    await deleteVendedor(id)
-    success('Vendedor excluído!')
-  }
-}
+const handleDeleteVendedor = async (id: string) => { if (await confirm({ title: 'Excluir', message: 'Excluir vendedor?', type: 'danger' })) await deleteVendedor(id) }
 </script>
