@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import type { Banner } from '../../stores/useBanners'
 import BaseInput from '../atoms/BaseInput.vue'
+import { optimizeImage } from '../../utils/imageOptimizer'
 
 const props = defineProps<{
   isOpen: boolean
@@ -19,6 +20,8 @@ const form = ref<Omit<Banner, 'id'>>({
 })
 
 const isDragging = ref(false)
+const imageFile = ref<File | null>(null)
+const imagePreview = ref<string>('')
 
 const emptyForm = () => ({
   imageUrl: '',
@@ -30,6 +33,7 @@ const emptyForm = () => ({
 
 watch(() => props.isOpen, (open) => {
   if (!open) return
+  imageFile.value = null
   if (props.bannerData) {
     form.value = {
       imageUrl: props.bannerData.imageUrl,
@@ -38,40 +42,46 @@ watch(() => props.isOpen, (open) => {
       order: props.bannerData.order,
       active: props.bannerData.active
     }
+    imagePreview.value = props.bannerData.imageUrl as string
   } else {
     form.value = emptyForm()
+    imagePreview.value = ''
   }
 })
 
-const fileToDataUrl = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => resolve(e.target?.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+const setFile = async (file: File) => {
+  const optimized = await optimizeImage(file, 1600)
+  imageFile.value = optimized
+  imagePreview.value = URL.createObjectURL(optimized)
 }
 
-const handleFileInput = async (e: Event) => {
+const handleFileInput = (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  form.value.imageUrl = await fileToDataUrl(file)
+  if (file) setFile(file)
+}
+
+const clearImage = () => {
+  imageFile.value = null
+  imagePreview.value = ''
+  form.value.imageUrl = ''
 }
 
 const onDragOver = (e: DragEvent) => { e.preventDefault(); isDragging.value = true }
 const onDragLeave = () => { isDragging.value = false }
-const onDrop = async (e: DragEvent) => {
+const onDrop = (e: DragEvent) => {
   e.preventDefault()
   isDragging.value = false
   const file = e.dataTransfer?.files[0]
-  if (file && file.type.startsWith('image/')) {
-    form.value.imageUrl = await fileToDataUrl(file)
-  }
+  if (file && file.type.startsWith('image/')) setFile(file)
 }
 
 const handleSave = () => {
-  if (form.value.title.trim() && form.value.imageUrl) {
-    emit('save', { ...form.value })
+  if (form.value.title.trim() && (imageFile.value || imagePreview.value)) {
+    const data: any = { ...form.value }
+    if (imageFile.value) {
+      data.imageUrl = imageFile.value
+    }
+    emit('save', data)
   }
 }
 </script>
@@ -106,7 +116,7 @@ const handleSave = () => {
             <span class="text-[9px] font-normal normal-case ml-1 text-slate-400">Recomendado: 800×1000px</span>
           </label>
 
-          <div v-if="!form.imageUrl"
+          <div v-if="!imagePreview"
             class="relative rounded-2xl border-2 border-dashed transition-all duration-200 cursor-pointer"
             :class="isDragging
               ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
@@ -132,9 +142,9 @@ const handleSave = () => {
           <div v-else
             class="relative rounded-2xl overflow-hidden border-2 border-blue-200 dark:border-blue-500/40 w-fit mx-auto bg-slate-100 dark:bg-black/20">
 
-            <img :src="form.imageUrl" :alt="form.title" class="block w-full h-auto max-h-[60vh] object-contain" />
+            <img :src="imagePreview" :alt="form.title" class="block w-full h-auto max-h-[60vh] object-contain" />
 
-            <button @click="form.imageUrl = ''"
+            <button @click="clearImage"
               class="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 rounded-lg text-white shadow-lg transition-all z-10">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -174,7 +184,7 @@ const handleSave = () => {
           class="px-6 py-2 text-[10px] font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">
           Cancelar
         </button>
-        <button @click="handleSave" :disabled="!form.imageUrl || !form.title.trim()"
+        <button @click="handleSave" :disabled="(!imageFile && !imagePreview) || !form.title.trim()"
           class="px-10 py-3 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
           {{ bannerData ? 'Salvar Alterações' : 'Criar Banner' }}
         </button>

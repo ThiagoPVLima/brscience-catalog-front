@@ -84,8 +84,11 @@
                   <div class="flex justify-center gap-2">
                     <button @click="openProductModal(product)"
                       class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors">✏️</button>
-                    <button @click="handleDeleteProduct(product.code)"
-                      class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">🗑️</button>
+                    <button @click="handleDeleteProduct(product)"
+                      class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                      title="Excluir produto">
+                      🗑️
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -257,7 +260,7 @@ import LineModal from '../organism/LineModal.vue'
 import BannerModal from '../organism/BannerModal.vue'
 import VendedorModal from '../organism/VendedorModal.vue'
 
-// Stores
+// Stores desestruturadas corretamente
 const { productList, addProduct, updateProduct, deleteProduct } = useProducts()
 const linesStore = useProductLines()
 const { banners, addBanner, updateBanner, deleteBanner } = useBanners()
@@ -279,57 +282,152 @@ const selectedLine = ref<ProductLine | null>(null)
 const selectedBanner = ref<Banner | null>(null)
 const selectedVendedor = ref<Vendedor | null>(null)
 
-// Computed
-const productLines = computed(() => linesStore.productLines.value)
+// Computed Corrigidos
+const productLines = computed(() => {
+  return (linesStore as any).productLines?.value || []
+})
+
 const filteredProducts = computed(() => {
   const query = searchQuery.value.toLowerCase().trim()
-  return query ? productList.value.filter(p => p.name.toLowerCase().includes(query) || p.code.toLowerCase().includes(query)) : productList.value
+  return query
+    ? productList.value.filter((p: Product) =>
+      p.name.toLowerCase().includes(query) ||
+      p.code.toLowerCase().includes(query)
+    )
+    : productList.value
 })
+
 const sortedBanners = computed(() => [...banners.value].sort((a, b) => a.order - b.order))
 
-const getLineColor = (lineName: string) => linesStore.productLines.value.find(l => l.name === lineName)?.color || '#3b82f6'
+const getLineColor = (lineName: string) => {
+  const lines = (linesStore as any).productLines?.value || []
+  return lines.find((l: any) => l.name === lineName)?.color || '#3b82f6'
+}
 
-// Handlers
-const openProductModal = (p?: Product) => { selectedProduct.value = p ? { ...p } : null; isProductModalOpen.value = true }
+// Handlers Produtos
+const openProductModal = (p?: Product) => {
+  selectedProduct.value = p ? { ...p } : null
+  isProductModalOpen.value = true
+}
+
 const handleSaveProduct = async (f: Product) => {
   try {
     if (selectedProduct.value) {
       if (await confirm({ title: 'Confirmar', message: `Atualizar ${f.name}?` })) {
-        await updateProduct(f, selectedProduct.value.code); success('Atualizado!'); isProductModalOpen.value = false
+        await updateProduct(f, selectedProduct.value.code)
+        success('Atualizado!')
+        isProductModalOpen.value = false
       }
-    } else { await addProduct(f); success('Salvo!'); isProductModalOpen.value = false }
-  } catch { error('Erro ao salvar.') }
+    } else {
+      await addProduct(f)
+      success('Salvo!')
+      isProductModalOpen.value = false
+    }
+  } catch (err: any) {
+    error(err.message || 'Erro ao salvar.')
+  }
 }
-const handleDeleteProduct = async (c: string) => { if (await confirm({ title: 'Excluir', message: 'Deseja excluir?', type: 'danger' })) await deleteProduct(c) }
 
-const openLineModal = (l?: ProductLine) => { selectedLine.value = l ? { ...l } : null; isLineModalOpen.value = true }
-const handleSaveLine = async (f: ProductLine & { imageFile?: File }) => {
+const handleDeleteProduct = async (p: Product) => {
+  const idOrCode = p.id || p.code
+  if (await confirm({ title: 'Excluir', message: `Deseja excluir ${p.name}?`, type: 'danger' })) {
+    try {
+      await deleteProduct(idOrCode)
+      success('Excluído!')
+    } catch (err: any) {
+      error(err.message)
+    }
+  }
+}
+
+// Handlers Linhas
+const openLineModal = (l?: ProductLine) => {
+  selectedLine.value = l ? { ...l } : null
+  isLineModalOpen.value = true
+}
+
+const handleSaveLine = async (f: any) => {
   try {
-    let url = f.imageUrl
-    if (f.imageFile && 'uploadLineImage' in linesStore) url = await (linesStore as any).uploadLineImage(f.imageFile, f.name)
-    const data = { ...f, imageUrl: url }
-    if (selectedLine.value) await linesStore.updateLine(selectedLine.value.name, data)
-    else await linesStore.addLine(data)
-    success('Linha salva!'); isLineModalOpen.value = false
-  } catch { error('Erro na linha.') }
+    const imageFile = f.imageFile instanceof File ? f.imageFile : undefined
+    const data = { name: f.name, color: f.color, imageUrl: f.imageUrl }
+    if (selectedLine.value) {
+      await linesStore.updateLine(selectedLine.value.name, data, imageFile)
+    } else {
+      await linesStore.addLine(data, imageFile)
+    }
+    success('Linha salva!')
+    isLineModalOpen.value = false
+  } catch {
+    error('Erro ao salvar linha.')
+  }
 }
-const handleDeleteLine = async (n: string) => { if (await confirm({ title: 'Excluir', message: 'Deseja excluir?', type: 'danger' })) await linesStore.deleteLine(n) }
 
-const openBannerModal = (b?: Banner) => { selectedBanner.value = b ? { ...b } : null; isBannerModalOpen.value = true }
+const handleDeleteLine = async (n: string) => {
+  if (await confirm({ title: 'Excluir', message: `Excluir linha ${n}?`, type: 'danger' })) {
+    try {
+      await linesStore.deleteLine(n)
+      success('Linha removida!')
+    } catch {
+      error('Erro ao remover.')
+    }
+  }
+}
+
+// Handlers Banners
+const openBannerModal = (b?: Banner) => {
+  selectedBanner.value = b ? { ...b } : null
+  isBannerModalOpen.value = true
+}
+
 const handleSaveBanner = async (f: any) => {
   try {
     selectedBanner.value ? await updateBanner(selectedBanner.value.id, f) : await addBanner(f)
-    success('Banner salvo!'); isBannerModalOpen.value = false
-  } catch { error('Erro banner.') }
+    success('Banner salvo!')
+    isBannerModalOpen.value = false
+  } catch {
+    error('Erro ao salvar banner.')
+  }
 }
-const handleDeleteBanner = async (id: string) => { if (await confirm({ title: 'Excluir', message: 'Excluir banner?', type: 'danger' })) await deleteBanner(id) }
 
-const openVendedorModal = (v?: Vendedor) => { selectedVendedor.value = v ? { ...v } : null; isVendedorModalOpen.value = true }
+const handleDeleteBanner = async (id: string) => {
+  if (await confirm({ title: 'Excluir', message: 'Excluir banner?', type: 'danger' })) {
+    try {
+      await deleteBanner(id)
+      success('Banner excluído!')
+    } catch {
+      error('Erro ao excluir.')
+    }
+  }
+}
+
+// Handlers Vendedores
+const openVendedorModal = (v?: Vendedor) => {
+  selectedVendedor.value = v ? { ...v } : null
+  isVendedorModalOpen.value = true
+}
+
 const handleSaveVendedor = async (f: any, file?: File | null) => {
   try {
-    selectedVendedor.value ? await updateVendedor(selectedVendedor.value.id, f, file || undefined) : await addVendedor(f, file || undefined)
-    success('Vendedor salvo!'); isVendedorModalOpen.value = false
-  } catch { error('Erro vendedor.') }
+    if (selectedVendedor.value) {
+      await updateVendedor(selectedVendedor.value.id, f, file || undefined)
+    } else {
+      await addVendedor(f, file || undefined)
+    }
+    success('Vendedor salvo!')
+    isVendedorModalOpen.value = false
+  } catch {
+    error('Erro ao salvar vendedor.')
+  }
 }
-const handleDeleteVendedor = async (id: string) => { if (await confirm({ title: 'Excluir', message: 'Excluir vendedor?', type: 'danger' })) await deleteVendedor(id) }
+
+const handleDeleteVendedor = async (id: string) => {
+  if (await confirm({ title: 'Excluir', message: 'Excluir vendedor?', type: 'danger' })) {
+    try {
+      await deleteVendedor(id)
+      success('Vendedor removido!')
+    } catch {
+      error('Erro ao remover.')
+    }
+  }
+}
 </script>

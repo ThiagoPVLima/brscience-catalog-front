@@ -3,6 +3,7 @@ import { ref, watch, onUnmounted } from 'vue';
 import { useProductLines } from '../../stores/useProductLines';
 import type { Product, ProductLine } from '../../types/products';
 import BaseInput from '../atoms/BaseInput.vue';
+import { optimizeImage } from '../../utils/imageOptimizer';
 
 const { productLines } = useProductLines();
 
@@ -29,6 +30,8 @@ const form = ref<Product>({
 
 // Drag state
 const isDraggingProduct = ref(false);
+const imageFile = ref<File | null>(null);
+const imagePreview = ref<string>('');
 
 watch(() => props.isOpen, (value) => {
   if (value) {
@@ -43,49 +46,54 @@ onUnmounted(() => {
 });
 
 watch(() => props.productData, (newVal) => {
+  imageFile.value = null;
   if (newVal) {
     form.value = { ...newVal };
+    imagePreview.value = (newVal.imageweb || newVal.image) as string;
   } else {
     form.value = {
       name: '', line: 'Fusion Frizz' as ProductLine, code: '', ncm: '', cest: '',
       anvisa: '', distributorPrice: '', price: '', image: '', imageweb: '',
       discountPercentage: undefined
     };
+    imagePreview.value = '';
   }
 }, { immediate: true });
 
-const fileToDataUrl = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target?.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+const setImageFile = async (file: File) => {
+  const optimized = await optimizeImage(file)
+  imageFile.value = optimized;
+  imagePreview.value = URL.createObjectURL(optimized);
 };
 
-const handleProductImageInput = async (e: Event) => {
+const handleProductImageInput = (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0];
-  if (!file) return;
-  const dataUrl = await fileToDataUrl(file);
-  form.value.imageweb = dataUrl;
-  form.value.image = dataUrl;
+  if (file) setImageFile(file);
+};
+
+const clearImage = () => {
+  imageFile.value = null;
+  imagePreview.value = '';
+  form.value.imageweb = '';
+  form.value.image = '';
 };
 
 const onProductDragOver = (e: DragEvent) => { e.preventDefault(); isDraggingProduct.value = true; };
 const onProductDragLeave = () => { isDraggingProduct.value = false; };
-const onProductDrop = async (e: DragEvent) => {
+const onProductDrop = (e: DragEvent) => {
   e.preventDefault();
   isDraggingProduct.value = false;
   const file = e.dataTransfer?.files[0];
-  if (file && file.type.startsWith('image/')) {
-    const dataUrl = await fileToDataUrl(file);
-    form.value.imageweb = dataUrl;
-    form.value.image = dataUrl;
-  }
+  if (file && file.type.startsWith('image/')) setImageFile(file);
 };
 
 const handleSave = () => {
-  emit('save', { ...form.value });
+  const data: any = { ...form.value };
+  if (imageFile.value) {
+    data.imageweb = imageFile.value;
+    data.image = imageFile.value;
+  }
+  emit('save', data);
 };
 </script>
 
@@ -173,7 +181,7 @@ const handleSave = () => {
               <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Foto do Produto</label>
 
               <!-- Drop Zone -->
-              <div v-if="!form.imageweb"
+              <div v-if="!imagePreview"
                 class="relative rounded-2xl border-2 border-dashed transition-all duration-200 cursor-pointer"
                 :class="isDraggingProduct
                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
@@ -200,8 +208,8 @@ const handleSave = () => {
               <!-- Preview -->
               <div v-else
                 class="relative rounded-2xl border-2 border-blue-200 dark:border-blue-500/40 bg-slate-50 dark:bg-[#0f1115] overflow-hidden">
-                <img :src="form.imageweb" class="w-full h-auto object-contain rounded-xl block" />
-                <button @click="() => { form.imageweb = ''; form.image = ''; }"
+                <img :src="imagePreview" class="w-full h-auto object-contain rounded-xl block" />
+                <button @click="clearImage"
                   class="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 rounded-lg text-white shadow-md transition-all">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

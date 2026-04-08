@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { DEFAULT_PRODUCT_IMAGE } from '../../constants/images'
 import type { ProductLine } from '../../stores/useProductLines'
 import BaseInput from '../atoms/BaseInput.vue'
+import { optimizeImage } from '../../utils/imageOptimizer'
 
 const props = defineProps<{
   isOpen: boolean
@@ -32,31 +33,19 @@ watch(() => props.lineData, (newVal) => {
   }
 }, { immediate: true })
 
-const handleFileSelect = (event: Event) => {
+const handleFileSelect = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
 
   if (file) {
-    // Validar tipo de arquivo
     if (!file.type.startsWith('image/')) {
       alert('Por favor, selecione um arquivo de imagem válido')
       return
     }
 
-    // Validar tamanho (máx 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      alert('A imagem deve ter no máximo 2MB')
-      return
-    }
-
-    selectedFile.value = file
-
-    // Criar preview
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      imagePreview.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
+    const optimized = await optimizeImage(file, 800)
+    selectedFile.value = optimized
+    imagePreview.value = URL.createObjectURL(optimized)
   }
 }
 

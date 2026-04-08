@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import type { Vendedor } from '../../stores/useVendedores'
 import BaseInput from '../atoms/BaseInput.vue'
+import { optimizeImage } from '../../utils/imageOptimizer'
 
 const props = defineProps<{
   isOpen: boolean
@@ -39,10 +40,11 @@ const formatWhatsApp = (val: string) => {
 }
 
 // Preview local do arquivo antes do upload
-const processFile = (file: File) => {
+const processFile = async (file: File) => {
   if (!file.type.startsWith('image/')) return
-  avatarFile.value = file
-  previewUrl.value = URL.createObjectURL(file)
+  const optimized = await optimizeImage(file, 600)
+  avatarFile.value = optimized
+  previewUrl.value = URL.createObjectURL(optimized)
 }
 
 const handleFileInput = (e: Event) => {

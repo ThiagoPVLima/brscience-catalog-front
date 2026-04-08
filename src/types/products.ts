@@ -6,6 +6,7 @@ export type ProductLine =
   | 'Baldes'
 
 export interface Product {
+  id: string | number
   name: string
   line: ProductLine
   code: string
