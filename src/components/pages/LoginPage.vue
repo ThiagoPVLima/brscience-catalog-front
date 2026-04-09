@@ -82,7 +82,10 @@ const handleLogin = async () => {
     }
 
     // LOGIN OK
-    localStorage.setItem('user', JSON.stringify(data.user)); router.push('/admin/dashboard');
+    localStorage.setItem('user', JSON.stringify(data.user))
+    const token = data.token || data.session?.access_token || data.accessToken || ''
+    if (token) localStorage.setItem('auth_token', token)
+    router.push('/admin/dashboard');
 
   } catch (error) {
     errorMessage.value = 'Erro ao conectar com o servidor';

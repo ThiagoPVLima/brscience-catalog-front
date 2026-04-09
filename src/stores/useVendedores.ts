@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { getAuthHeaders } from '../utils/auth'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -36,8 +37,12 @@ export function useVendedores() {
       form.append('avatar_url', vendedor.avatar_url)
     }
 
-    const res = await fetch(`${API}/vendedores`, { method: 'POST', body: form })
-    if (!res.ok) { const e = await res.json(); throw new Error(e.error) }
+    const res = await fetch(`${API}/vendedores`, { method: 'POST', headers: getAuthHeaders(), body: form })
+    if (!res.ok) {
+      let msg = 'Erro ao criar vendedor'
+      try { const e = await res.json(); msg = e.error || e.message || msg } catch {}
+      throw new Error(msg)
+    }
 
     const data = await res.json()
     vendedorList.value.push(data)
@@ -54,8 +59,12 @@ export function useVendedores() {
       form.append('avatar_url', vendedor.avatar_url || '')
     }
 
-    const res = await fetch(`${API}/vendedores/${id}`, { method: 'PUT', body: form })
-    if (!res.ok) { const e = await res.json(); throw new Error(e.error) }
+    const res = await fetch(`${API}/vendedores/${id}`, { method: 'PUT', headers: getAuthHeaders(), body: form })
+    if (!res.ok) {
+      let msg = 'Erro ao atualizar vendedor'
+      try { const e = await res.json(); msg = e.error || e.message || msg } catch {}
+      throw new Error(msg)
+    }
 
     const index = vendedorList.value.findIndex(v => v.id === id)
     if (index !== -1) {
@@ -64,8 +73,12 @@ export function useVendedores() {
   }
 
   const deleteVendedor = async (id: string) => {
-    const res = await fetch(`${API}/vendedores/${id}`, { method: 'DELETE' })
-    if (!res.ok) { const e = await res.json(); throw new Error(e.error) }
+    const res = await fetch(`${API}/vendedores/${id}`, { method: 'DELETE', headers: getAuthHeaders() })
+    if (!res.ok) {
+      let msg = 'Erro ao excluir vendedor'
+      try { const e = await res.json(); msg = e.error || e.message || msg } catch {}
+      throw new Error(msg)
+    }
     vendedorList.value = vendedorList.value.filter(v => v.id !== id)
   }
 

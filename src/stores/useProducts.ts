@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import type { Product } from '../types/products'
+import { getAuthHeaders } from '../utils/auth'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -26,7 +27,7 @@ export function useProducts() {
   const addProduct = async (product: Product) => {
     const form = productToFormData(product)
 
-    const res = await fetch(`${API}/products`, { method: 'POST', body: form })
+    const res = await fetch(`${API}/products`, { method: 'POST', headers: getAuthHeaders(), body: form })
     if (!res.ok) {
       const err = await res.json()
       throw new Error(err.error)
@@ -51,6 +52,7 @@ export function useProducts() {
 
     const res = await fetch(`${API}/products/${encodeURIComponent(originalCode)}`, {
       method: 'PUT',
+      headers: getAuthHeaders(),
       body: form
     })
     if (!res.ok) {
@@ -71,7 +73,8 @@ export function useProducts() {
     }
 
     const res = await fetch(`${API}/products/${encodeURIComponent(code)}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     })
 
     if (!res.ok) {

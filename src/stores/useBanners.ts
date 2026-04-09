@@ -2,6 +2,7 @@
 //  useBanners.ts
 // ══════════════════════════════════════════════════════════════════
 import { ref } from 'vue'
+import { getAuthHeaders } from '../utils/auth'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -56,7 +57,7 @@ export function useBanners() {
       }
     }
 
-    const res = await fetch(`${API}/banners`, { method: 'POST', body: form })
+    const res = await fetch(`${API}/banners`, { method: 'POST', headers: getAuthHeaders(), body: form })
     if (!res.ok) {
       let msg = 'Erro ao criar banner'
       try { const e = await res.json(); msg = e.error || e.message || msg } catch {}
@@ -90,7 +91,7 @@ export function useBanners() {
       }
     }
 
-    const res = await fetch(`${API}/banners/${id}`, { method: 'PUT', body: form })
+    const res = await fetch(`${API}/banners/${id}`, { method: 'PUT', headers: getAuthHeaders(), body: form })
     if (!res.ok) {
       let msg = 'Erro ao atualizar banner'
       try { const e = await res.json(); msg = e.error || e.message || msg } catch {}
@@ -105,7 +106,7 @@ export function useBanners() {
   }
 
   const deleteBanner = async (id: string) => {
-    const res = await fetch(`${API}/banners/${id}`, { method: 'DELETE' })
+    const res = await fetch(`${API}/banners/${id}`, { method: 'DELETE', headers: getAuthHeaders() })
     if (!res.ok) {
       let msg = 'Erro ao excluir banner'
       try { const e = await res.json(); msg = e.error || e.message || msg } catch {}
