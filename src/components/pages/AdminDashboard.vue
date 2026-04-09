@@ -14,6 +14,10 @@
               class="px-4 py-2 text-[10px] font-black border border-slate-300 dark:border-[#242a36] rounded-xl hover:bg-white dark:hover:bg-[#1d222b] text-slate-600 dark:text-gray-400 transition-all">
               VOLTAR PARA LOJA
             </router-link>
+            <button @click="handleLogout"
+              class="px-4 py-2 text-[10px] font-black border border-red-300 dark:border-red-800 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-all">
+              SAIR
+            </button>
             <button v-if="activeTab === 'products'" @click="openProductModal()"
               class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase rounded-xl shadow-lg active:scale-95 transition-all">
               + Novo Produto
@@ -244,6 +248,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useProducts } from '../../stores/useProducts'
 import { useProductLines, type ProductLine } from '../../stores/useProductLines'
 import { useBanners, type Banner } from '../../stores/useBanners'
@@ -268,6 +273,13 @@ const { vendedorList, addVendedor, updateVendedor, deleteVendedor } = useVendedo
 
 const { success, error } = useToast()
 const { confirm } = useConfirm()
+const router = useRouter()
+
+const handleLogout = () => {
+  localStorage.removeItem('user')
+  localStorage.removeItem('auth_token')
+  router.push('/login')
+}
 
 const searchQuery = ref('')
 const activeTab = ref<'products' | 'lines' | 'banners' | 'vendedores'>('products')
