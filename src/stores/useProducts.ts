@@ -65,21 +65,22 @@ export function useProducts() {
   }
 
   // ─── Remove produto ──────────────────────────────────────────────────────────
-  const deleteProduct = async (id: number | string) => {
-    if (!id) {
-      throw new Error('Este produto não possui ID e não pode ser excluído via API.');
+  const deleteProduct = async (code: string) => {
+    if (!code) {
+      throw new Error('Este produto não possui código e não pode ser excluído via API.');
     }
 
-    const res = await fetch(`${API}/products/${id}`, {
+    const res = await fetch(`${API}/products/${encodeURIComponent(code)}`, {
       method: 'DELETE'
     })
 
     if (!res.ok) {
-      const err = await res.json()
-      throw new Error(err.error || 'Erro ao deletar produto no servidor')
+      let msg = 'Erro ao deletar produto no servidor'
+      try { const err = await res.json(); msg = err.error || err.message || msg } catch {}
+      throw new Error(msg)
     }
 
-    productList.value = productList.value.filter((p: Product) => p.id !== id)
+    productList.value = productList.value.filter((p: Product) => p.code !== code)
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────

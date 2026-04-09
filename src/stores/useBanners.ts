@@ -57,7 +57,11 @@ export function useBanners() {
     }
 
     const res = await fetch(`${API}/banners`, { method: 'POST', body: form })
-    if (!res.ok) { const e = await res.json(); throw new Error(e.error) }
+    if (!res.ok) {
+      let msg = 'Erro ao criar banner'
+      try { const e = await res.json(); msg = e.error || e.message || msg } catch {}
+      throw new Error(msg)
+    }
 
     const data = await res.json()
     banners.value.push(rowToBanner(data))
@@ -87,7 +91,11 @@ export function useBanners() {
     }
 
     const res = await fetch(`${API}/banners/${id}`, { method: 'PUT', body: form })
-    if (!res.ok) { const e = await res.json(); throw new Error(e.error) }
+    if (!res.ok) {
+      let msg = 'Erro ao atualizar banner'
+      try { const e = await res.json(); msg = e.error || e.message || msg } catch {}
+      throw new Error(msg)
+    }
 
     const index = banners.value.findIndex(b => b.id === id)
     if (index !== -1) {
@@ -98,7 +106,11 @@ export function useBanners() {
 
   const deleteBanner = async (id: string) => {
     const res = await fetch(`${API}/banners/${id}`, { method: 'DELETE' })
-    if (!res.ok) { const e = await res.json(); throw new Error(e.error) }
+    if (!res.ok) {
+      let msg = 'Erro ao excluir banner'
+      try { const e = await res.json(); msg = e.error || e.message || msg } catch {}
+      throw new Error(msg)
+    }
     banners.value = banners.value.filter(b => b.id !== id)
     updateActiveBanners()
   }

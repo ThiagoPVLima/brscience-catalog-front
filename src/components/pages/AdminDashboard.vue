@@ -329,10 +329,9 @@ const handleSaveProduct = async (f: Product) => {
 }
 
 const handleDeleteProduct = async (p: Product) => {
-  const idOrCode = p.id || p.code
   if (await confirm({ title: 'Excluir', message: `Deseja excluir ${p.name}?`, type: 'danger' })) {
     try {
-      await deleteProduct(idOrCode)
+      await deleteProduct(p.code)
       success('Excluído!')
     } catch (err: any) {
       error(err.message)
@@ -384,8 +383,8 @@ const handleSaveBanner = async (f: any) => {
     selectedBanner.value ? await updateBanner(selectedBanner.value.id, f) : await addBanner(f)
     success('Banner salvo!')
     isBannerModalOpen.value = false
-  } catch {
-    error('Erro ao salvar banner.')
+  } catch (err: any) {
+    error(err.message || 'Erro ao salvar banner.')
   }
 }
 

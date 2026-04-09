@@ -50,8 +50,8 @@ export function useVendedores() {
     form.append('whatsapp', vendedor.whatsapp)
     if (avatarFile) {
       form.append('avatar', avatarFile)
-    } else if (vendedor.avatar_url) {
-      form.append('avatar_url', vendedor.avatar_url)
+    } else {
+      form.append('avatar_url', vendedor.avatar_url || '')
     }
 
     const res = await fetch(`${API}/vendedores/${id}`, { method: 'PUT', body: form })
