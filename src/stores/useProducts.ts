@@ -9,7 +9,6 @@ const loading = ref(false)
 
 export function useProducts() {
 
-  // ─── Busca todos os produtos ────────────────────────────────────────────────
   const fetchProducts = async () => {
     loading.value = true
     try {
@@ -23,7 +22,6 @@ export function useProducts() {
     }
   }
 
-  // ─── Adiciona produto ────────────────────────────────────────────────────────
   const addProduct = async (product: Product) => {
     const form = productToFormData(product)
 
@@ -46,11 +44,10 @@ export function useProducts() {
     }
   }
 
-  // ─── Atualiza produto ────────────────────────────────────────────────────────
-  const updateProduct = async (updatedProduct: Product, originalCode: string) => {
+  const updateProduct = async (updatedProduct: Product, originalId: number) => {
     const form = productToFormData(updatedProduct)
 
-    const res = await fetch(`${API}/products/${encodeURIComponent(originalCode)}`, {
+    const res = await fetch(`${API}/products/${originalId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: form
@@ -60,19 +57,18 @@ export function useProducts() {
       throw new Error(err.error)
     }
 
-    const index = productList.value.findIndex((p: Product) => p.code === originalCode)
+    const index = productList.value.findIndex((p: Product) => p.id === originalId)
     if (index !== -1) {
       productList.value[index] = { ...updatedProduct }
     }
   }
 
-  // ─── Remove produto ──────────────────────────────────────────────────────────
-  const deleteProduct = async (code: string) => {
-    if (!code) {
-      throw new Error('Este produto não possui código e não pode ser excluído via API.');
+  const deleteProduct = async (id: number) => {
+    if (!id) {
+      throw new Error('Este produto não possui ID e não pode ser excluído via API.')
     }
 
-    const res = await fetch(`${API}/products/${encodeURIComponent(code)}`, {
+    const res = await fetch(`${API}/products/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders()
     })
@@ -83,10 +79,9 @@ export function useProducts() {
       throw new Error(msg)
     }
 
-    productList.value = productList.value.filter((p: Product) => p.code !== code)
+    productList.value = productList.value.filter((p: Product) => p.id !== id)
   }
 
-  // ─── Helpers ─────────────────────────────────────────────────────────────────
   function rowToProduct(row: any): Product {
     return {
       id: row.id || row._id,
