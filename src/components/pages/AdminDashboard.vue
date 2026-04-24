@@ -265,7 +265,6 @@ import LineModal from '../organism/LineModal.vue'
 import BannerModal from '../organism/BannerModal.vue'
 import VendedorModal from '../organism/VendedorModal.vue'
 
-// Stores desestruturadas corretamente
 const { productList, addProduct, updateProduct, deleteProduct } = useProducts()
 const linesStore = useProductLines()
 const { banners, addBanner, updateBanner, deleteBanner } = useBanners()
@@ -294,7 +293,6 @@ const selectedLine = ref<ProductLine | null>(null)
 const selectedBanner = ref<Banner | null>(null)
 const selectedVendedor = ref<Vendedor | null>(null)
 
-// Computed Corrigidos
 const productLines = computed(() => {
   return (linesStore as any).productLines?.value || []
 })
@@ -316,7 +314,6 @@ const getLineColor = (lineName: string) => {
   return lines.find((l: any) => l.name === lineName)?.color || '#3b82f6'
 }
 
-// Handlers Produtos
 const openProductModal = (p?: Product) => {
   selectedProduct.value = p ? { ...p } : null
   isProductModalOpen.value = true
@@ -326,7 +323,7 @@ const handleSaveProduct = async (f: Product) => {
   try {
     if (selectedProduct.value) {
       if (await confirm({ title: 'Confirmar', message: `Atualizar ${f.name}?` })) {
-        await updateProduct(f, selectedProduct.value.code)
+        await updateProduct(f, selectedProduct.value.id as number) // ✅ corrigido
         success('Atualizado!')
         isProductModalOpen.value = false
       }
@@ -343,7 +340,7 @@ const handleSaveProduct = async (f: Product) => {
 const handleDeleteProduct = async (p: Product) => {
   if (await confirm({ title: 'Excluir', message: `Deseja excluir ${p.name}?`, type: 'danger' })) {
     try {
-      await deleteProduct(p.code)
+      await deleteProduct(p.id as number) // ✅ corrigido
       success('Excluído!')
     } catch (err: any) {
       error(err.message)
@@ -351,7 +348,6 @@ const handleDeleteProduct = async (p: Product) => {
   }
 }
 
-// Handlers Linhas
 const openLineModal = (l?: ProductLine) => {
   selectedLine.value = l ? { ...l } : null
   isLineModalOpen.value = true
@@ -384,7 +380,6 @@ const handleDeleteLine = async (n: string) => {
   }
 }
 
-// Handlers Banners
 const openBannerModal = (b?: Banner) => {
   selectedBanner.value = b ? { ...b } : null
   isBannerModalOpen.value = true
@@ -411,7 +406,6 @@ const handleDeleteBanner = async (id: string) => {
   }
 }
 
-// Handlers Vendedores
 const openVendedorModal = (v?: Vendedor) => {
   selectedVendedor.value = v ? { ...v } : null
   isVendedorModalOpen.value = true
