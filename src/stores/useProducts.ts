@@ -54,7 +54,7 @@ export function useProducts() {
     })
     if (!res.ok) {
       const err = await res.json()
-      throw new Error(err.error)
+      throw new Error(err.error || JSON.stringify(err)) // ✅ corrigido
     }
 
     const index = productList.value.findIndex((p: Product) => p.id === originalId)
