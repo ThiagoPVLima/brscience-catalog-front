@@ -323,7 +323,7 @@ const handleSaveProduct = async (f: Product) => {
   try {
     if (selectedProduct.value) {
       if (await confirm({ title: 'Confirmar', message: `Atualizar ${f.name}?` })) {
-        await updateProduct(f, selectedProduct.value.id as number) // ✅ corrigido
+        await updateProduct(f, selectedProduct.value.id as number)
         success('Atualizado!')
         isProductModalOpen.value = false
       }
@@ -333,7 +333,8 @@ const handleSaveProduct = async (f: Product) => {
       isProductModalOpen.value = false
     }
   } catch (err: any) {
-    error(err.message || 'Erro ao salvar.')
+    console.error('ERRO COMPLETO:', err)
+    error(err.message || JSON.stringify(err) || 'Erro ao salvar.')
   }
 }
 
