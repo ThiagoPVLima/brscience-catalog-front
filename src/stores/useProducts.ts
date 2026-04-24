@@ -54,7 +54,7 @@ export function useProducts() {
     })
     if (!res.ok) {
       const err = await res.json()
-      throw new Error(err.error || JSON.stringify(err)) // ✅ corrigido
+      throw new Error(err.error || JSON.stringify(err))
     }
 
     const index = productList.value.findIndex((p: Product) => p.id === originalId)
@@ -118,7 +118,10 @@ export function useProducts() {
       form.append('image', img)
     } else if (img) {
       form.append('image_url', String(img))
+    } else {
+      form.append('image_url', '') // ✅ remoção de imagem
     }
+
     return form
   }
 
