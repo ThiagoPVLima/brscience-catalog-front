@@ -326,7 +326,7 @@ const handleSaveProduct = async (f: Product) => {
   try {
     if (selectedProduct.value) {
       if (await confirm({ title: 'Confirmar', message: `Atualizar ${f.name}?` })) {
-        await updateProduct(f, selectedProduct.value.code)
+        await updateProduct(f, selectedProduct.value.id)
         success('Atualizado!')
         isProductModalOpen.value = false
       }
@@ -343,7 +343,7 @@ const handleSaveProduct = async (f: Product) => {
 const handleDeleteProduct = async (p: Product) => {
   if (await confirm({ title: 'Excluir', message: `Deseja excluir ${p.name}?`, type: 'danger' })) {
     try {
-      await deleteProduct(p.code)
+      await deleteProduct(p.id)
       success('Excluído!')
     } catch (err: any) {
       error(err.message)

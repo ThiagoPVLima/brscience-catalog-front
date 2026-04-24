@@ -4,6 +4,7 @@ import { useProductLines } from '../../stores/useProductLines';
 import type { Product, ProductLine } from '../../types/products';
 import BaseInput from '../atoms/BaseInput.vue';
 import { optimizeImage } from '../../utils/imageOptimizer';
+import { maskNCM, maskCEST, maskANVISA } from '../../utils/masks';
 
 const { productLines } = useProductLines();
 
@@ -48,7 +49,12 @@ onUnmounted(() => {
 watch(() => props.productData, (newVal) => {
   imageFile.value = null;
   if (newVal) {
-    form.value = { ...newVal };
+    form.value = {
+      ...newVal,
+      ncm: maskNCM(newVal.ncm || ''),
+      cest: maskCEST(newVal.cest || ''),
+      anvisa: maskANVISA(newVal.anvisa || '')
+    };
     imagePreview.value = (newVal.imageweb || newVal.image) as string;
   } else {
     form.value = {
@@ -163,17 +169,17 @@ const handleSave = () => {
 
             <div class="space-y-1.5">
               <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Registro ANVISA</label>
-              <BaseInput v-model="form.anvisa" placeholder="Número do registro" :show-search-icon="false" />
+              <BaseInput v-model="form.anvisa" placeholder="0.0000.0000.000-0" :show-search-icon="false" :mask="maskANVISA" />
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-1.5">
                 <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">NCM</label>
-                <BaseInput v-model="form.ncm" placeholder="NCM" :show-search-icon="false" />
+                <BaseInput v-model="form.ncm" placeholder="0000.00.00" :show-search-icon="false" :mask="maskNCM" />
               </div>
               <div class="space-y-1.5">
                 <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">CEST</label>
-                <BaseInput v-model="form.cest" placeholder="CEST" :show-search-icon="false" />
+                <BaseInput v-model="form.cest" placeholder="00.000.00" :show-search-icon="false" :mask="maskCEST" />
               </div>
             </div>
 

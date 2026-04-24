@@ -47,32 +47,40 @@ export function useProducts() {
   }
 
   // ─── Atualiza produto ────────────────────────────────────────────────────────
-  const updateProduct = async (updatedProduct: Product, originalCode: string) => {
+  const updateProduct = async (updatedProduct: Product, originalId: string | number) => {
     const form = productToFormData(updatedProduct)
 
-    const res = await fetch(`${API}/products/${encodeURIComponent(originalCode)}`, {
+    const res = await fetch(`${API}/products/${originalId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: form
     })
     if (!res.ok) {
-      const err = await res.json()
-      throw new Error(err.error)
+      let msg = 'Erro ao atualizar produto'
+      try { const err = await res.json(); msg = err.error || err.message || msg } catch {}
+      throw new Error(msg)
     }
 
-    const index = productList.value.findIndex((p: Product) => p.code === originalCode)
+    const index = productList.value.findIndex((p: Product) => p.id === originalId)
     if (index !== -1) {
-      productList.value[index] = { ...updatedProduct }
+      // Mantém image_url existente se não foi enviada nova imagem
+      const img = updatedProduct.imageweb || updatedProduct.image
+      const keepImage = !(img instanceof File)
+      productList.value[index] = {
+        ...updatedProduct,
+        image: keepImage ? String(img || productList.value[index].image) : productList.value[index].image,
+        imageweb: keepImage ? String(img || productList.value[index].imageweb) : productList.value[index].imageweb,
+      }
     }
   }
 
   // ─── Remove produto ──────────────────────────────────────────────────────────
-  const deleteProduct = async (code: string) => {
-    if (!code) {
-      throw new Error('Este produto não possui código e não pode ser excluído via API.');
+  const deleteProduct = async (id: string | number) => {
+    if (!id) {
+      throw new Error('Este produto não possui ID e não pode ser excluído via API.')
     }
 
-    const res = await fetch(`${API}/products/${encodeURIComponent(code)}`, {
+    const res = await fetch(`${API}/products/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders()
     })
@@ -83,7 +91,7 @@ export function useProducts() {
       throw new Error(msg)
     }
 
-    productList.value = productList.value.filter((p: Product) => p.code !== code)
+    productList.value = productList.value.filter((p: Product) => p.id !== id)
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────

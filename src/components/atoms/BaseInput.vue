@@ -3,13 +3,17 @@ const props = defineProps<{
   modelValue: string,
   placeholder?: string,
   type?: string,
-  showSearchIcon?: boolean
+  showSearchIcon?: boolean,
+  mask?: (value: string) => string
 }>()
 const emit = defineEmits<{ (e: 'update:modelValue', value: string): void }>()
 
 const handleInput = (e: Event) => {
   const target = e.target as HTMLInputElement
-  if (target) emit('update:modelValue', target.value)
+  if (!target) return
+  const masked = props.mask ? props.mask(target.value) : target.value
+  if (props.mask) target.value = masked
+  emit('update:modelValue', masked)
 }
 </script>
 

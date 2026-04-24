@@ -8,6 +8,7 @@ import { useCarrinho } from '../composables/useCarrinho'
 import ProductCard from '../molecules/ProductCard.vue'
 import CartModal from '../organism/CartModal.vue'
 import ProductDetailsModal from '../organism/ProductDetailsModal.vue'
+import BannerPromoModal from '../organism/BannerPromoModal.vue'
 import BaseInput from '../atoms/BaseInput.vue'
 import ThemeToggle from '../atoms/ThemeToggle.vue'
 import ScroolToTop from '../atoms/ScroolToTop.vue'
@@ -17,7 +18,6 @@ import AppFooter from '../organism/Appfooter.vue'
 const { productList: products } = useProducts()
 const { productLines } = useProductLines()
 
-// Converter linhas para objeto de cores
 const lineHexColors = computed(() => {
   return productLines.value.reduce((acc, line) => {
     acc[line.name] = line.color
@@ -31,6 +31,9 @@ const selectedLine = ref('Todos')
 
 const isDetailsOpen = ref(false)
 const selectedProduct = ref<(Product & { quantity?: number; color?: string }) | null>(null)
+
+const isPromoOpen = ref(false)
+const promoCodes = ref<string[]>([])
 
 const { quantidadeTotal, adicionar } = useCarrinho()
 
@@ -59,6 +62,17 @@ const handleAddToCartFromModal = (product: any) => {
   adicionar(product);
   isDetailsOpen.value = false;
   isCartOpen.value = true;
+}
+
+const handleOpenPromo = (codes: string[]) => {
+  promoCodes.value = codes
+  isPromoOpen.value = true
+}
+
+const handlePromoViewProduct = (product: Product & { color?: string }) => {
+  isPromoOpen.value = false
+  selectedProduct.value = product
+  isDetailsOpen.value = true
 }
 </script>
 
@@ -95,7 +109,7 @@ const handleAddToCartFromModal = (product: any) => {
 
       <!-- Banner Carousel -->
       <div class="mb-8">
-        <BannerCarousel />
+        <BannerCarousel @open-promo="handleOpenPromo" />
       </div>
 
       <!-- Filtro de Linhas -->
@@ -121,9 +135,7 @@ const handleAddToCartFromModal = (product: any) => {
                 'w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 transition-all duration-300 overflow-hidden',
                 selectedLine === line.name ? 'scale-110 shadow-lg' : 'border-slate-200 dark:border-[#242a36]'
               ]">
-              <!-- Se tem imagem, mostrar imagem -->
               <img v-if="line.imageUrl" :src="line.imageUrl" :alt="line.name" class="w-full h-full object-cover" />
-              <!-- Senão, mostrar texto -->
               <span v-else class="text-[9px] font-black uppercase text-center px-1"
                 :style="{ color: selectedLine === line.name ? line.color : '' }">
                 {{ line.name.split(' ')[0] }}
@@ -140,17 +152,19 @@ const handleAddToCartFromModal = (product: any) => {
         </div>
       </div>
 
-      <!-- Produtos por Linha -->
-      <div v-for="(group, lineName) in groupedProducts" :key="lineName" class="mb-12">
-        <h2 class="text-sm sm:text-base font-bold uppercase tracking-widest mb-5 pl-5 border-l-4"
-          :style="{ borderColor: lineHexColors[lineName] || '#64748b' }">
-          Linha {{ lineName }}
-        </h2>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <ProductCard v-for="p in group" :key="p.code" v-bind="p" :color="lineHexColors[lineName]"
-            @click="openProductDetails(p, lineHexColors[lineName])" />
+      <!-- Produtos por Linha com animação -->
+      <TransitionGroup name="product-group" tag="div">
+        <div v-for="(group, lineName) in groupedProducts" :key="lineName" class="mb-12">
+          <h2 class="text-sm sm:text-base font-bold uppercase tracking-widest mb-5 pl-5 border-l-4"
+            :style="{ borderColor: lineHexColors[lineName] || '#64748b' }">
+            Linha {{ lineName }}
+          </h2>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <ProductCard v-for="p in group" :key="p.code" v-bind="p" :color="lineHexColors[lineName]"
+              @click="openProductDetails(p, lineHexColors[lineName])" />
+          </div>
         </div>
-      </div>
+      </TransitionGroup>
 
       <div v-if="Object.keys(groupedProducts).length === 0" class="text-center py-20">
         <p class="text-slate-400 font-black uppercase tracking-widest">Nenhum produto encontrado</p>
@@ -162,6 +176,12 @@ const handleAddToCartFromModal = (product: any) => {
     <ProductDetailsModal :is-open="isDetailsOpen" :product="selectedProduct" @close="isDetailsOpen = false"
       @add="handleAddToCartFromModal" />
 
+    <BannerPromoModal
+      :is-open="isPromoOpen"
+      :product-codes="promoCodes"
+      @close="isPromoOpen = false"
+      @view-product="handlePromoViewProduct" />
+
     <ScroolToTop />
 
     <AppFooter />
@@ -169,12 +189,26 @@ const handleAddToCartFromModal = (product: any) => {
 </template>
 
 <style scoped>
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+.product-group-enter-active {
+  transition: opacity 0.35s ease-out, transform 0.35s ease-out;
+}
+.product-group-leave-active {
+  transition: opacity 0.2s ease-in, transform 0.2s ease-in;
+  position: absolute;
+  width: 100%;
+}
+.product-group-enter-from {
+  opacity: 0;
+  transform: translateY(-14px);
+}
+.product-group-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+.product-group-move {
+  transition: transform 0.35s ease;
 }
 </style>
