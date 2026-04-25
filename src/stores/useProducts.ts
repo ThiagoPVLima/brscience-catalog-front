@@ -44,12 +44,7 @@ export function useProducts() {
     }
   }
 
-<<<<<<< HEAD
-  // ─── Atualiza produto ────────────────────────────────────────────────────────
-  const updateProduct = async (updatedProduct: Product, originalId: string | number) => {
-=======
   const updateProduct = async (updatedProduct: Product, originalId: number) => {
->>>>>>> 8f7b75ec9d368edc1d40a8c6ee46a4e72eeb496b
     const form = productToFormData(updatedProduct)
 
     const res = await fetch(`${API}/products/${originalId}`, {
@@ -58,14 +53,8 @@ export function useProducts() {
       body: form
     })
     if (!res.ok) {
-<<<<<<< HEAD
-      let msg = 'Erro ao atualizar produto'
-      try { const err = await res.json(); msg = err.error || err.message || msg } catch {}
-      throw new Error(msg)
-=======
       const err = await res.json()
       throw new Error(err.error || JSON.stringify(err))
->>>>>>> 8f7b75ec9d368edc1d40a8c6ee46a4e72eeb496b
     }
 
     const index = productList.value.findIndex((p: Product) => p.id === originalId)
@@ -81,12 +70,7 @@ export function useProducts() {
     }
   }
 
-<<<<<<< HEAD
-  // ─── Remove produto ──────────────────────────────────────────────────────────
-  const deleteProduct = async (id: string | number) => {
-=======
   const deleteProduct = async (id: number) => {
->>>>>>> 8f7b75ec9d368edc1d40a8c6ee46a4e72eeb496b
     if (!id) {
       throw new Error('Este produto não possui ID e não pode ser excluído via API.')
     }
@@ -98,7 +82,7 @@ export function useProducts() {
 
     if (!res.ok) {
       let msg = 'Erro ao deletar produto no servidor'
-      try { const err = await res.json(); msg = err.error || err.message || msg } catch {}
+      try { const err = await res.json(); msg = err.error || err.message || msg } catch { }
       throw new Error(msg)
     }
 
