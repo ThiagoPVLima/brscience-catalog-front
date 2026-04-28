@@ -18,7 +18,9 @@ export function useCheckout() {
       vendedorId = params.get('vendedor') || ''
     }
 
-    const vendedor = vendedorList.value.find(v => String(v.id) === vendedorId) || vendedorList.value[0]
+    const vendedor = vendedorList.value.find(
+  v => v.nome.toLowerCase() === vendedorId.toLowerCase()
+) || vendedorList.value[0]
     if (!vendedor) return alert('Nenhum vendedor cadastrado.')
 
     let mensagem = `Olá, gostaria de confirmar meu pedido:\n\n`
