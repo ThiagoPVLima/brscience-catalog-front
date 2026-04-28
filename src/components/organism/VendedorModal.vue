@@ -4,6 +4,7 @@ import type { Vendedor } from '../../stores/useVendedores'
 import BaseInput from '../atoms/BaseInput.vue'
 import { optimizeImage } from '../../utils/imageOptimizer'
 import { useSubmitting } from '../../composables/useSubmitting'
+import { useToast } from '../../composables/useToast'
 
 const STORE_URL = 'http://86.48.23.217:8098'
 
@@ -15,6 +16,7 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'save'])
 
 const { submitting, guard, reset } = useSubmitting()
+const { success } = useToast()
 const form = ref({ nome: '', whatsapp: '', avatar_url: '' })
 const avatarFile = ref<File | null>(null)
 const isDragging = ref(false)
@@ -80,8 +82,20 @@ const handleSave = () => {
 
 const initials = (nome: string) => nome.trim().split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
 
-const copiarLink = () => {
-  navigator.clipboard.writeText(linkLoja.value)
+const copiarLink = async () => {
+  try {
+    await navigator.clipboard.writeText(linkLoja.value)
+    success('Link copiado!')
+  } catch {
+    // fallback para browsers que bloqueiam clipboard
+    const el = document.createElement('textarea')
+    el.value = linkLoja.value
+    document.body.appendChild(el)
+    el.select()
+    document.execCommand('copy')
+    document.body.removeChild(el)
+    success('Link copiado!')
+  }
 }
 </script>
 
@@ -166,7 +180,6 @@ const copiarLink = () => {
           </p>
         </div>
 
-        <!-- Link da loja -->
         <div v-if="form.nome"
           class="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20">
           <p class="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 mb-1">Link da loja</p>
