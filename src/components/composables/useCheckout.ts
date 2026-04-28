@@ -22,6 +22,8 @@ export function useCheckout() {
 
     const vendedor = vendedorList.value.find(
       v => v.nome.toLowerCase() === vendedorNome.toLowerCase()
+    ) || vendedorList.value.find(
+      v => v.nome.toLowerCase() === 'matheus'
     ) || vendedorList.value[0]
 
     if (!vendedor) return alert('Nenhum vendedor cadastrado.')
