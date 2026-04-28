@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import type { Vendedor } from '../../stores/useVendedores'
 import BaseInput from '../atoms/BaseInput.vue'
 import { optimizeImage } from '../../utils/imageOptimizer'
 import { useSubmitting } from '../../composables/useSubmitting'
+
+const STORE_URL = 'http://86.48.23.217:8098'
 
 const props = defineProps<{
   isOpen: boolean
@@ -19,6 +21,10 @@ const isDragging = ref(false)
 const previewUrl = ref('')
 
 const emptyForm = () => ({ nome: '', whatsapp: '', avatar_url: '' })
+
+const linkLoja = computed(() =>
+  form.value.nome ? `${STORE_URL}/?vendedor=${form.value.nome.toLowerCase()}` : ''
+)
 
 watch(() => props.isOpen, (open) => {
   if (!open) { reset(); return }
@@ -36,12 +42,10 @@ watch(() => props.isOpen, (open) => {
   }
 })
 
-// Formata o WhatsApp: só números
 const formatWhatsApp = (val: string) => {
   form.value.whatsapp = val.replace(/\D/g, '')
 }
 
-// Preview local do arquivo antes do upload
 const processFile = async (file: File) => {
   if (!file.type.startsWith('image/')) return
   const optimized = await optimizeImage(file, 600)
@@ -74,8 +78,11 @@ const handleSave = () => {
   guard(() => { emit('save', { ...form.value }, avatarFile.value) })
 }
 
-// Iniciais para o avatar placeholder
 const initials = (nome: string) => nome.trim().split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
+
+const copiarLink = () => {
+  navigator.clipboard.writeText(linkLoja.value)
+}
 </script>
 
 <template>
@@ -83,7 +90,6 @@ const initials = (nome: string) => nome.trim().split(' ').slice(0, 2).map(n => n
     <div
       class="bg-white dark:bg-[#161a22] w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 dark:border-[#242a36] flex flex-col max-h-[90vh]">
 
-      <!-- Header -->
       <div class="p-6 border-b border-slate-100 dark:border-[#242a36] flex justify-between items-center">
         <h2 class="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-white">
           {{ vendedorData ? 'Editar Vendedor' : 'Novo Vendedor' }}
@@ -95,10 +101,8 @@ const initials = (nome: string) => nome.trim().split(' ').slice(0, 2).map(n => n
         </button>
       </div>
 
-      <!-- Content -->
       <div class="flex-1 overflow-y-auto p-6 space-y-5">
 
-        <!-- Avatar Upload -->
         <div class="space-y-1.5">
           <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Foto do Vendedor</label>
 
@@ -106,11 +110,11 @@ const initials = (nome: string) => nome.trim().split(' ').slice(0, 2).map(n => n
             class="relative rounded-2xl border-2 border-dashed transition-all duration-200 cursor-pointer"
             :class="isDragging
               ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10'
-              : 'border-slate-200 dark:border-[#242a36] hover:border-emerald-400 dark:hover:border-emerald-500 bg-slate-50 dark:bg-[#0f1115]'" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop"
+              : 'border-slate-200 dark:border-[#242a36] hover:border-emerald-400 dark:hover:border-emerald-500 bg-slate-50 dark:bg-[#0f1115]'"
+            @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop"
             @click="($refs.avatarInput as HTMLInputElement).click()">
             <input ref="avatarInput" type="file" accept="image/*" class="hidden" @change="handleFileInput" />
             <div class="flex flex-col items-center justify-center py-8 px-4 text-center pointer-events-none">
-              <!-- Avatar placeholder com iniciais -->
               <div class="w-16 h-16 rounded-full mb-3 flex items-center justify-center text-xl font-black"
                 :class="isDragging ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600' : 'bg-slate-100 dark:bg-[#1d222b] text-slate-400'">
                 {{ form.nome ? initials(form.nome) : '?' }}
@@ -122,7 +126,6 @@ const initials = (nome: string) => nome.trim().split(' ').slice(0, 2).map(n => n
             </div>
           </div>
 
-          <!-- Preview do avatar -->
           <div v-else class="flex items-center gap-4">
             <div class="relative flex-shrink-0">
               <img :src="previewUrl" alt="Avatar"
@@ -145,7 +148,6 @@ const initials = (nome: string) => nome.trim().split(' ').slice(0, 2).map(n => n
           </div>
         </div>
 
-        <!-- Nome -->
         <div class="space-y-1.5">
           <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">
             Nome <span class="text-red-500">*</span>
@@ -153,7 +155,6 @@ const initials = (nome: string) => nome.trim().split(' ').slice(0, 2).map(n => n
           <BaseInput v-model="form.nome" placeholder="Ex: João Silva" :show-search-icon="false" />
         </div>
 
-        <!-- WhatsApp -->
         <div class="space-y-1.5">
           <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">
             WhatsApp <span class="text-red-500">*</span>
@@ -165,18 +166,21 @@ const initials = (nome: string) => nome.trim().split(' ').slice(0, 2).map(n => n
           </p>
         </div>
 
-        <!-- Preview do link WhatsApp -->
-        <div v-if="form.whatsapp"
-          class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
-          <p class="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 mb-1">Link gerado</p>
-          <p class="text-[10px] text-slate-600 dark:text-slate-300 break-all font-mono">
-            wa.me/{{ form.whatsapp }}
+        <!-- Link da loja -->
+        <div v-if="form.nome"
+          class="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20">
+          <p class="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 mb-1">Link da loja</p>
+          <p class="text-[10px] text-slate-600 dark:text-slate-300 break-all font-mono mb-2">
+            {{ linkLoja }}
           </p>
+          <button @click="copiarLink"
+            class="text-[9px] font-black uppercase text-blue-500 hover:text-blue-600 transition-colors">
+            📋 Copiar link
+          </button>
         </div>
 
       </div>
 
-      <!-- Footer -->
       <div
         class="p-6 bg-slate-50 dark:bg-[#1d222b] border-t border-slate-100 dark:border-[#242a36] flex justify-end gap-3">
         <button @click="$emit('close')"
