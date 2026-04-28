@@ -4,6 +4,7 @@ import type { Banner } from '../../stores/useBanners'
 import BaseInput from '../atoms/BaseInput.vue'
 import { optimizeImage } from '../../utils/imageOptimizer'
 import { useProducts } from '../../stores/useProducts'
+import { useSubmitting } from '../../composables/useSubmitting'
 
 const props = defineProps<{
   isOpen: boolean
@@ -13,6 +14,7 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'save'])
 
 const { productList } = useProducts()
+const { submitting, guard, reset } = useSubmitting()
 
 type ActionType = 'default' | 'link' | 'promo'
 
@@ -20,6 +22,7 @@ const form = ref<Omit<Banner, 'id'>>({
   imageUrl: '',
   title: '',
   link: '',
+  promoPrice: '',
   order: 0,
   active: true
 })
@@ -54,7 +57,7 @@ const parseLink = (link: string | undefined) => {
 }
 
 watch(() => props.isOpen, (open) => {
-  if (!open) return
+  if (!open) { reset(); return }
   imageFile.value = null
   productSearch.value = ''
   if (props.bannerData) {
@@ -62,13 +65,14 @@ watch(() => props.isOpen, (open) => {
       imageUrl: props.bannerData.imageUrl,
       title: props.bannerData.title,
       link: props.bannerData.link || '',
+      promoPrice: props.bannerData.promoPrice || '',
       order: props.bannerData.order,
       active: props.bannerData.active
     }
     imagePreview.value = props.bannerData.imageUrl as string
     parseLink(props.bannerData.link)
   } else {
-    form.value = { imageUrl: '', title: '', link: '', order: 0, active: true }
+    form.value = { imageUrl: '', title: '', link: '', promoPrice: '', order: 0, active: true }
     imagePreview.value = ''
     actionType.value = 'default'
     linkUrl.value = ''
@@ -110,14 +114,15 @@ const toggleCode = (code: string) => {
 
 const handleSave = () => {
   if (!form.value.title.trim() || (!imageFile.value && !imagePreview.value)) return
+  guard(() => {
+    let link = ''
+    if (actionType.value === 'link') link = linkUrl.value.trim()
+    else if (actionType.value === 'promo') link = selectedCodes.value.length ? `promo:${selectedCodes.value.join(',')}` : ''
 
-  let link = ''
-  if (actionType.value === 'link') link = linkUrl.value.trim()
-  else if (actionType.value === 'promo') link = selectedCodes.value.length ? `promo:${selectedCodes.value.join(',')}` : ''
-
-  const data: any = { ...form.value, link }
-  if (imageFile.value) data.imageUrl = imageFile.value
-  emit('save', data)
+    const data: any = { ...form.value, link }
+    if (imageFile.value) data.imageUrl = imageFile.value
+    emit('save', data)
+  })
 }
 </script>
 
@@ -245,6 +250,16 @@ const handleSave = () => {
           </div>
         </div>
 
+        <!-- Preço da promoção (usado na mensagem WhatsApp) -->
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">
+            Preço da Promoção
+            <span class="text-[9px] font-normal normal-case ml-1 text-slate-400">(opcional — aparece na mensagem do WhatsApp)</span>
+          </label>
+          <BaseInput :model-value="form.promoPrice ?? ''" @update:model-value="val => form.promoPrice = val"
+            placeholder="Ex: R$ 49,90" :show-search-icon="false" />
+        </div>
+
         <div class="grid grid-cols-2 gap-3">
           <div class="space-y-1.5">
             <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Ordem</label>
@@ -270,9 +285,9 @@ const handleSave = () => {
           class="px-6 py-2 text-[10px] font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">
           Cancelar
         </button>
-        <button @click="handleSave" :disabled="(!imageFile && !imagePreview) || !form.title.trim()"
+        <button @click="handleSave" :disabled="submitting || (!imageFile && !imagePreview) || !form.title.trim()"
           class="px-10 py-3 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-          {{ bannerData ? 'Salvar Alterações' : 'Criar Banner' }}
+          {{ submitting ? 'Salvando...' : bannerData ? 'Salvar Alterações' : 'Criar Banner' }}
         </button>
       </div>
     </div>

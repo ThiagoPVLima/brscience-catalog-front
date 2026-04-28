@@ -56,16 +56,26 @@ const onTouchEnd = (e: TouchEvent) => {
 }
 
 // Link sem query params → redireciona para Matheus no WhatsApp
-const matheusLink = computed(() => {
+const matheusPhone = computed(() => {
   const matheus = vendedorList.value.find(v =>
     v.nome.toLowerCase().includes('matheus')
   )
-  if (matheus) {
-    const phone = matheus.whatsapp.replace(/\D/g, '')
-    return `https://wa.me/55${phone}?text=Olá! Vi uma promoção no site e tenho interesse.`
-  }
-  return null
+  return matheus ? matheus.whatsapp.replace(/\D/g, '') : null
 })
+
+const buildMatheusLink = (banner?: Banner) => {
+  const phone = matheusPhone.value
+  if (!phone) return null
+  let msg = 'Olá! Vi uma promoção no site e tenho interesse.'
+  if (banner?.title) {
+    msg = banner.promoPrice
+      ? `Olá! Vi a promoção "${banner.title}" por ${banner.promoPrice} e tenho interesse!`
+      : `Olá! Vi a promoção "${banner.title}" no site e tenho interesse!`
+  }
+  return `https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`
+}
+
+const matheusLink = computed(() => buildMatheusLink())
 
 const hasQueryParams = (url: string): boolean => {
   try { return new URL(url).search !== '' } catch { return false }
@@ -75,7 +85,8 @@ const handleBannerClick = (banner: Banner) => {
   if (isSwiping) { isSwiping = false; return }
 
   if (!banner.link) {
-    if (matheusLink.value) window.open(matheusLink.value, '_blank')
+    const link = buildMatheusLink(banner)
+    if (link) window.open(link, '_blank')
     return
   }
 
@@ -86,8 +97,9 @@ const handleBannerClick = (banner: Banner) => {
   }
 
   if (!hasQueryParams(banner.link)) {
-    // Link sem query params → Matheus
-    if (matheusLink.value) window.open(matheusLink.value, '_blank')
+    // Link sem query params → Matheus com contexto do banner
+    const link = buildMatheusLink(banner)
+    if (link) window.open(link, '_blank')
     else window.open(banner.link, '_blank')
     return
   }
@@ -96,7 +108,7 @@ const handleBannerClick = (banner: Banner) => {
 }
 
 const bannerHasAction = (banner: Banner) =>
-  !!banner.link || !!matheusLink.value
+  !!banner.link || !!matheusPhone.value
 
 onMounted(() => { startAutoplay() })
 onUnmounted(() => { stopAutoplay() })

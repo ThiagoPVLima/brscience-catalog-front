@@ -12,6 +12,7 @@ export interface Banner {
   mobileImageUrl?: string | File
   title: string
   link?: string
+  promoPrice?: string
   order: number
   active: boolean
 }
@@ -42,6 +43,7 @@ export function useBanners() {
     form.append('order', String(banner.order))
     form.append('active', String(banner.active))
     if (banner.link) form.append('link', banner.link)
+    if (banner.promoPrice) form.append('promo_price', banner.promoPrice)
 
     if (banner.imageUrl instanceof File) {
       form.append('image', banner.imageUrl)
@@ -75,6 +77,7 @@ export function useBanners() {
     if (updatedBanner.order !== undefined) form.append('order', String(updatedBanner.order))
     if (updatedBanner.active !== undefined) form.append('active', String(updatedBanner.active))
     if (updatedBanner.link !== undefined) form.append('link', updatedBanner.link || '')
+    if (updatedBanner.promoPrice !== undefined) form.append('promo_price', updatedBanner.promoPrice || '')
 
     if (updatedBanner.imageUrl) {
       if (updatedBanner.imageUrl instanceof File) {
@@ -132,6 +135,7 @@ function rowToBanner(row: any): Banner {
     mobileImageUrl: row.mobile_image_url || undefined,
     title: row.title,
     link: row.link || undefined,
+    promoPrice: row.promo_price || undefined,
     order: row.order,
     active: Boolean(row.active)
   }

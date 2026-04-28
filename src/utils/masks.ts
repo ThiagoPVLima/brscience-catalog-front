@@ -1,3 +1,8 @@
+// EAN-8 / EAN-13: only digits, max 13
+export function maskEAN(value: string): string {
+  return value.replace(/\D/g, '').slice(0, 13)
+}
+
 export function maskNCM(value: string): string {
   const d = value.replace(/\D/g, '').slice(0, 8)
   if (d.length <= 4) return d

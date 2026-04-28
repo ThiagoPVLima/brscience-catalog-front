@@ -1,7 +1,12 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import { useConfirm } from '../../composables/useConfirm'
 
 const { dialogData, isDialogOpen, close } = useConfirm()
+
+const confirming = ref(false)
+
+watch(isDialogOpen, (val) => { if (!val) confirming.value = false })
 
 const getTypeColors = (type?: string) => {
   const colors = {
@@ -13,6 +18,8 @@ const getTypeColors = (type?: string) => {
 }
 
 const handleConfirm = () => {
+  if (confirming.value) return
+  confirming.value = true
   if (dialogData.value?.onConfirm) {
     dialogData.value.onConfirm()
   }
@@ -61,12 +68,13 @@ const handleCancel = () => {
           </button>
           <button
             @click="handleConfirm"
+            :disabled="confirming"
             :class="[
-              'px-8 py-2.5 text-white text-[10px] font-black uppercase rounded-lg shadow-lg active:scale-95 transition-all',
+              'px-8 py-2.5 text-white text-[10px] font-black uppercase rounded-lg shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed',
               getTypeColors(dialogData.type)
             ]"
           >
-            {{ dialogData.confirmText }}
+            {{ confirming ? 'Aguarde...' : dialogData.confirmText }}
           </button>
         </div>
       </div>

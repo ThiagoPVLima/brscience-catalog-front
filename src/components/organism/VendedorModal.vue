@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import type { Vendedor } from '../../stores/useVendedores'
 import BaseInput from '../atoms/BaseInput.vue'
 import { optimizeImage } from '../../utils/imageOptimizer'
+import { useSubmitting } from '../../composables/useSubmitting'
 
 const props = defineProps<{
   isOpen: boolean
@@ -11,6 +12,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['close', 'save'])
 
+const { submitting, guard, reset } = useSubmitting()
 const form = ref({ nome: '', whatsapp: '', avatar_url: '' })
 const avatarFile = ref<File | null>(null)
 const isDragging = ref(false)
@@ -19,7 +21,7 @@ const previewUrl = ref('')
 const emptyForm = () => ({ nome: '', whatsapp: '', avatar_url: '' })
 
 watch(() => props.isOpen, (open) => {
-  if (!open) return
+  if (!open) { reset(); return }
   avatarFile.value = null
   if (props.vendedorData) {
     form.value = {
@@ -69,7 +71,7 @@ const removeAvatar = () => {
 
 const handleSave = () => {
   if (!form.value.nome.trim() || !form.value.whatsapp.trim()) return
-  emit('save', { ...form.value }, avatarFile.value)
+  guard(() => { emit('save', { ...form.value }, avatarFile.value) })
 }
 
 // Iniciais para o avatar placeholder
@@ -181,9 +183,9 @@ const initials = (nome: string) => nome.trim().split(' ').slice(0, 2).map(n => n
           class="px-6 py-2 text-[10px] font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">
           Cancelar
         </button>
-        <button @click="handleSave" :disabled="!form.nome.trim() || !form.whatsapp.trim()"
+        <button @click="handleSave" :disabled="submitting || !form.nome.trim() || !form.whatsapp.trim()"
           class="px-10 py-3 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-          {{ vendedorData ? 'Salvar' : 'Criar Vendedor' }}
+          {{ submitting ? 'Salvando...' : vendedorData ? 'Salvar' : 'Criar Vendedor' }}
         </button>
       </div>
     </div>

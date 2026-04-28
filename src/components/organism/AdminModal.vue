@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue';
+import { useSubmitting } from '../../composables/useSubmitting';
 import { useProductLines } from '../../stores/useProductLines';
 import type { Product, ProductLine } from '../../types/products';
 import BaseInput from '../atoms/BaseInput.vue';
 import { optimizeImage } from '../../utils/imageOptimizer';
-import { maskNCM, maskCEST, maskANVISA } from '../../utils/masks';
+import { maskNCM, maskCEST, maskANVISA, maskEAN } from '../../utils/masks';
 
 const { productLines } = useProductLines();
 
@@ -29,6 +30,8 @@ const form = ref<Product>({
   discountPercentage: undefined
 });
 
+const { submitting, guard, reset } = useSubmitting();
+
 // Drag state
 const isDraggingProduct = ref(false);
 const imageFile = ref<File | null>(null);
@@ -39,6 +42,7 @@ watch(() => props.isOpen, (value) => {
     document.body.style.overflow = 'hidden';
   } else {
     document.body.style.overflow = '';
+    reset();
   }
 }, { immediate: true });
 
@@ -93,14 +97,14 @@ const onProductDrop = (e: DragEvent) => {
   if (file && file.type.startsWith('image/')) setImageFile(file);
 };
 
-const handleSave = () => {
+const handleSave = () => guard(() => {
   const data: any = { ...form.value };
   if (imageFile.value) {
     data.imageweb = imageFile.value;
     data.image = imageFile.value;
   }
   emit('save', data);
-};
+});
 </script>
 
 <template>
@@ -159,7 +163,7 @@ const handleSave = () => {
 
             <div class="space-y-1.5">
               <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Código EAN / SKU</label>
-              <BaseInput v-model="form.code" placeholder="789..." :show-search-icon="false" />
+              <BaseInput v-model="form.code" placeholder="0000000000000" :show-search-icon="false" :mask="maskEAN" />
             </div>
           </div>
 
@@ -233,9 +237,9 @@ const handleSave = () => {
           class="px-6 py-2 text-[10px] font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">
           Cancelar
         </button>
-        <button @click="handleSave"
-          class="px-10 py-3 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg active:scale-95 transition-all">
-          {{ productData ? 'Salvar Alterações' : 'Cadastrar Produto' }}
+        <button @click="handleSave" :disabled="submitting"
+          class="px-10 py-3 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+          {{ submitting ? 'Salvando...' : productData ? 'Salvar Alterações' : 'Cadastrar Produto' }}
         </button>
       </div>
     </div>

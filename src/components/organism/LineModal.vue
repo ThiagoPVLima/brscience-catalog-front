@@ -4,6 +4,7 @@ import { DEFAULT_PRODUCT_IMAGE } from '../../constants/images'
 import type { ProductLine } from '../../stores/useProductLines'
 import BaseInput from '../atoms/BaseInput.vue'
 import { optimizeImage } from '../../utils/imageOptimizer'
+import { useSubmitting } from '../../composables/useSubmitting'
 
 const props = defineProps<{
   isOpen: boolean
@@ -18,8 +19,11 @@ const form = ref<ProductLine>({
   imageUrl: undefined
 })
 
+const { submitting, guard, reset } = useSubmitting()
 const selectedFile = ref<File | null>(null)
 const imagePreview = ref<string | null>(null)
+
+watch(() => props.isOpen, (val) => { if (!val) reset() })
 
 watch(() => props.lineData, (newVal) => {
   if (newVal) {
@@ -56,12 +60,10 @@ const removeImage = () => {
 }
 
 const handleSave = () => {
-  if (form.value.name.trim()) {
-    emit('save', {
-      ...form.value,
-      imageFile: selectedFile.value // Passar o arquivo para o componente pai processar
-    })
-  }
+  if (!form.value.name.trim()) return
+  guard(() => {
+    emit('save', { ...form.value, imageFile: selectedFile.value })
+  })
 }
 </script>
 
@@ -184,9 +186,9 @@ const handleSave = () => {
           class="px-6 py-2 text-[10px] font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">
           Cancelar
         </button>
-        <button @click="handleSave"
-          class="px-10 py-3 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg active:scale-95 transition-all">
-          {{ lineData ? 'Salvar' : 'Criar Linha' }}
+        <button @click="handleSave" :disabled="submitting"
+          class="px-10 py-3 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+          {{ submitting ? 'Salvando...' : lineData ? 'Salvar' : 'Criar Linha' }}
         </button>
       </div>
     </div>
